@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { FolderSearch, Home, LogOut, PenLine, Search, ShieldCheck, UsersRound } from 'lucide-react'
+import { FolderSearch, Home, LayoutDashboard, LogOut, PenLine, Search, ShieldCheck, UsersRound } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useMatch, useNavigate } from 'react-router-dom'
 import { listCases, logout, me } from './api'
@@ -10,6 +10,7 @@ import Splash from './components/Splash'
 import TraceMark from './components/TraceMark'
 import { recentCases, RECENT_EVENT, rememberVisit } from './lib/recent'
 import AuditPage from './pages/AuditPage'
+import DashboardPage from './pages/DashboardPage'
 import OversightPage from './pages/OversightPage'
 import OversightUserPage from './pages/OversightUserPage'
 import RecordPage from './pages/RecordPage'
@@ -114,6 +115,11 @@ function Shell({ user, children }: { user: User; children: ReactNode }) {
             <TraceMark />
           </Link>
           <nav className="flex flex-col gap-1">
+            {user.role === 'admin' && (
+              <NavLink to="/dashboard" className={navItem}>
+                <LayoutDashboard size={16} /> Dashboard
+              </NavLink>
+            )}
             <NavLink end to="/cases" className={navItem}>
               <Home size={16} /> Home
             </NavLink>
@@ -255,6 +261,14 @@ export default function App() {
         element={
           <Guard>
             <RecordPage />
+          </Guard>
+        }
+      />
+      <Route
+        path="/dashboard"
+        element={
+          <Guard admin>
+            <DashboardPage />
           </Guard>
         }
       />

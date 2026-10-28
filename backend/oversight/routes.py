@@ -8,7 +8,7 @@ person logs in again without logging out, and counts as active until the token w
 from collections import Counter
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
@@ -212,3 +212,105 @@ def user_cases(
     out.sort(key=lambda c: c["last"], reverse=True)
     record(session, request, "oversight_view", admin, detail={"view": "cases", "user_id": u.id})
     return out
+
+
+# what kind of work each audit action is, for the dashboard's charts
+GROUPS = {
+    "sketch": {"generate", "refine", "revert", "make_photo", "variant_create", "style_apply", "proportion_adjust",
+               "translate", "body_create", "body_realistic", "body_reconstruct", "body_model_blender",
+               "figure_update", "figure_save", "head_create", "angle_view_create"},
+    "interview": {"interview_start", "interview_assist", "interview_confirm"},
+    "casework": {"case_create", "case_update", "case_open", "case_list", "image_view", "export", "record_search",
+                 "record_view"},
+}
+QUIET = {"oversight_view", "audit_view"}  # admins looking at logs is not investigator activity
+
+
+def group_of(action: str) -> str:
+    return next((g for g, acts in GROUPS.items() if action in acts), "account")
+
+
+@router.get("/dashboard")
+def dashboard(
+    request: Request,
+    days: int = Query(14, ge=1, le=90),
+    admin: User = Depends(admin_only),
+    session: Session = Depends(get_session),
+):
+    expiry = timedelta(hours=request.app.state.settings.jwt_expiry_hours)
+    now = datetime.now(UTC)
+    first_day = (now - timedelta(days=days - 1)).date()
+    since = datetime.combine(first_day, datetime.min.time(), UTC)
+    users = [u for u in session.exec(select(User).order_by(User.username)).all() if visible(admin, u)]
+    names = {u.id: u.username for u in session.exec(select(User)).all()}
+    by_user = _rows_by_user(session)
+    day_keys = [(first_day + timedelta(days=i)).isoformat() for i in range(days)]
+    daily = {d: {"date": d, "groups": {"sketch": 0, "interview": 0, "casework": 0, "account": 0}, "logins": 0,
+                 "failed": 0} for d in day_keys}
+
+    def day_of(ts: datetime) -> str:
+        return _aware(ts).date().isoformat()
+
+    failed_rows = session.exec(
+        select(AuditLog).where(AuditLog.action == "login_failed", AuditLog.ts >= since)
+    ).all()
+    visible_names = {u.username for u in users}
+    for r in failed_rows:
+        if r.username in visible_names and day_of(r.ts) in daily:
+            daily[day_of(r.ts)]["failed"] += 1
+    failed_by = Counter(r.username for r in failed_rows if r.username in visible_names)
+
+    people, timeline, recent, case_ids = [], [], [], set()
+    for u in users:
+        rows = by_user.get(u.id, [])
+        sessions = sessions_of(rows, expiry)
+        in_range = [r for r in rows if _aware(r.ts) >= since and r.action not in QUIET]
+        per_day = Counter(day_of(r.ts) for r in in_range)
+        for r in in_range:
+            daily[day_of(r.ts)]["groups"][group_of(r.action)] += 1
+            if r.action == "login":
+                daily[day_of(r.ts)]["logins"] += 1
+        cases = {r.case_id for r in in_range if r.case_id}
+        case_ids |= cases
+        recent += in_range
+        mine = [s for s in sessions if (s["end"] is None or _aware(s["end"]) >= since)]
+        for s in mine:
+            timeline.append({
+                "user_id": u.id, "username": u.username, "start": s["login"].ts,
+                "end": None if s["end_reason"] == "active" else s["end"], "end_reason": s["end_reason"],
+                "actions": len(s["rows"]), "cases": len({r.case_id for r in s["rows"] if r.case_id}),
+            })
+        acts = Counter(r.action for r in in_range)
+        people.append({
+            "user_id": u.id, "username": u.username, "role": u.role, "supervisor": names.get(u.supervisor_id),
+            "online": bool(sessions) and sessions[-1]["end_reason"] == "active",
+            "last_seen": rows[-1].ts if rows else None, "sessions": len(mine), "cases": len(cases),
+            "actions": len(in_range), "sketches": acts["generate"] + acts["refine"],
+            "failed_logins": failed_by[u.username], "denied": acts["access_denied"],
+            "daily_actions": [per_day[d] for d in day_keys],
+        })
+    refs = _case_refs(session, {r.case_id for r in recent if r.case_id})
+    recent.sort(key=lambda r: r.id, reverse=True)
+    record(session, request, "oversight_view", admin, detail={"view": "dashboard", "days": days})
+    return {
+        "days": days,
+        "daily": list(daily.values()),
+        "people": people,
+        "sessions": sorted(timeline, key=lambda s: s["start"]),
+        "recent": [
+            {"id": r.id, "ts": r.ts, "username": r.username, "action": r.action, "group": group_of(r.action),
+             "case_id": r.case_id, "case_number": refs[r.case_id].case_number if r.case_id in refs else None,
+             "case_title": refs[r.case_id].title if r.case_id in refs else None}
+            for r in recent[:20]
+        ],
+        "totals": {
+            "investigators": sum(p["role"] != "admin" for p in people),
+            "admins": sum(p["role"] == "admin" for p in people),
+            "online": sum(p["online"] for p in people),
+            "sessions": len(timeline),
+            "cases": len(case_ids),
+            "sketches": sum(p["sketches"] for p in people),
+            "failed_logins": sum(failed_by.values()),
+            "denied": sum(p["denied"] for p in people),
+        },
+    }

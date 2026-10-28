@@ -11,6 +11,8 @@ class Settings(BaseSettings):
 
     jwt_secret: str = Field(min_length=32)  # HS256 key; short secrets are brute-forceable
     jwt_expiry_hours: int = 8
+    # creating an admin account at sign-up needs this code; empty turns admin sign-up off
+    admin_signup_code: str = ""
     cookie_secure: bool = True
     database_url: str = "sqlite:///./app.db"
     storage_dir: Path = Path("./storage")

@@ -263,6 +263,7 @@ export const AUDIT_ACTIONS = [
   'record_view',
   'oversight_view',
   'supervisor_assign',
+  'signup',
   'interview_confirm',
   'audit_view',
   'access_denied',
@@ -456,4 +457,29 @@ export interface UserCase {
   last: string
   actions: number
   by_action: Record<string, number>
+}
+
+export type WorkGroup = 'sketch' | 'interview' | 'casework' | 'account'
+
+export interface Dashboard {
+  days: number
+  daily: { date: string; groups: Record<WorkGroup, number>; logins: number; failed: number }[]
+  people: {
+    user_id: number
+    username: string
+    role: string
+    supervisor: string | null
+    online: boolean
+    last_seen: string | null
+    sessions: number
+    cases: number
+    actions: number
+    sketches: number
+    failed_logins: number
+    denied: number
+    daily_actions: number[]
+  }[]
+  sessions: { user_id: number; username: string; start: string; end: string | null; end_reason: string; actions: number; cases: number }[]
+  recent: { id: number; ts: string; username: string | null; action: string; group: WorkGroup; case_id: number | null; case_number: string | null; case_title: string | null }[]
+  totals: { investigators: number; admins: number; online: number; sessions: number; cases: number; sketches: number; failed_logins: number; denied: number }
 }

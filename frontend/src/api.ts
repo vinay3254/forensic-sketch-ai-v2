@@ -17,6 +17,7 @@ import type {
   Proportions,
   QuestionBank,
   Oversight,
+  Dashboard,
   UserCase,
   UserSession,
   RecordDetail,
@@ -66,6 +67,8 @@ const post = <T>(path: string, body?: unknown) =>
   request<T>(path, { method: 'POST', body: body === undefined ? undefined : JSON.stringify(body) })
 
 export const login = (username: string, password: string) => post<User>('/api/auth/login', { username, password })
+export const signup = (body: { username: string; password: string; role: 'officer' | 'admin'; admin_code?: string }) =>
+  post<User>('/api/auth/signup', body)
 export const logout = () => post<void>('/api/auth/logout')
 export const me = () => request<User>('/api/auth/me')
 
@@ -218,3 +221,4 @@ export const userSessions = (userId: number) => request<UserSession[]>(`/api/adm
 export const sessionTimeline = (userId: number, loginId: number) =>
   request<Omit<AuditRow, 'prev_hash' | 'hash'>[]>(`/api/admin/users/${userId}/sessions/${loginId}`)
 export const userCases = (userId: number) => request<UserCase[]>(`/api/admin/users/${userId}/cases`)
+export const dashboard = (days: number) => request<Dashboard>(`/api/admin/dashboard?days=${days}`)
