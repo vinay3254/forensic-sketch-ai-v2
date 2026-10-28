@@ -50,3 +50,8 @@ def test_logout_clears_session(client, seed_users):
     client.post("/api/auth/login", json={"username": "officer1", "password": "officer1pass"})
     client.post("/api/auth/logout")
     assert client.get("/api/auth/me").status_code == 401
+
+
+def test_vinay3254_can_log_in_as_officer(client, seed_users):
+    r = client.post("/api/auth/login", json={"username": "vinay3254", "password": "7767"})
+    assert r.status_code == 200 and r.json()["role"] == "officer"

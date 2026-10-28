@@ -68,6 +68,7 @@ The Vite dev server proxies `/api` and `/health` to `http://localhost:8000`, so 
 | officer1 | officer1pass | officer (owns the demo case) |
 | officer2 | officer2pass | officer |
 | admin | adminpass | admin |
+| vinay3254 | 7767 | officer |
 
 ## Demo script (3 minutes)
 

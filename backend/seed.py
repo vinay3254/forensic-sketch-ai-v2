@@ -9,6 +9,7 @@ DEMO_USERS = [
     ("officer1", "officer1pass", "officer"),
     ("officer2", "officer2pass", "officer"),
     ("admin", "adminpass", "admin"),
+    ("vinay3254", "7767", "officer"),
 ]
 DEMO_CASE_TITLE = "Chain snatching, Yelahanka"
 DEMO_DESCRIPTION = (
@@ -55,7 +56,7 @@ def main() -> None:
     ai = MockAIClient() if settings.ai_mock else LiveAIClient(settings)
     with Session(engine, expire_on_commit=False) as session:
         seed_demo(session, settings, ai)
-    print("Seeded demo users (officer1, officer2, admin) and demo case.")
+    print("Seeded demo users (officer1, officer2, admin, vinay3254) and demo case.")
 
 
 if __name__ == "__main__":
