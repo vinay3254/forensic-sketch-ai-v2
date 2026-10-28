@@ -73,6 +73,20 @@ class FaceVersion(SQLModel, table=True):
     created_at: datetime = ts_field()
 
 
+class Variant(SQLModel, table=True):
+    """A disguise variant (cap, glasses, beard...) of one sketch version. Not part of the version line."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    case_id: int = Field(foreign_key="case.id", index=True)
+    version_id: int = Field(foreign_key="faceversion.id")
+    kind: str
+    image_path: str
+    prompt: str
+    localized: bool = False
+    created_by: int = Field(foreign_key="user.id")
+    created_at: datetime = ts_field()
+
+
 class ChatMessage(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     case_id: int = Field(foreign_key="case.id", index=True)

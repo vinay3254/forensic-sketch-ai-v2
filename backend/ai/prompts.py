@@ -77,6 +77,29 @@ def build_edit_prompt(edits: list[Edit]) -> str:
     )
 
 
+# disguise variants: kind -> (label, change, regions to localize; None = the whole sketch may change)
+VARIANTS: dict[str, tuple[str, str, list[str] | None]] = {
+    "cap": ("Cap", "wearing a plain baseball cap", ["hair"]),
+    "brimmed_hat": ("Brimmed hat", "wearing a plain hat with a wide brim", ["hair"]),
+    "hood": ("Hood", "wearing a hooded top with the hood up over the head", None),
+    "glasses": ("Glasses", "wearing plain thin-framed glasses", ["accessories", "eyes"]),
+    "sunglasses": ("Sunglasses", "wearing dark sunglasses", ["accessories", "eyes"]),
+    "moustache": ("Moustache", "with a full moustache", ["facial_hair"]),
+    "full_beard": ("Full beard", "with a full beard and moustache", ["facial_hair"]),
+    "goatee": ("Goatee", "with a goatee on the chin", ["facial_hair"]),
+    "stubble": ("Stubble", "with a few days of stubble", ["facial_hair"]),
+    "shaved_head": ("Shaved head", "with a fully shaved head", ["hair"]),
+}
+
+
+def build_variant_prompt(kind: str) -> str:
+    return (
+        f"Edit this black and white pencil sketch to show the same person {VARIANTS[kind][1]}. "
+        "Keep the same person, identity, face, expression, pose, framing, rough hand-drawn pencil line style "
+        "and plain background exactly the same, and change nothing else. Black and white only."
+    )
+
+
 def build_photo_prompt(a: Attributes) -> str:
     # the sketch carries shape but no colour, so colours come from the witness's attributes
     colours = [

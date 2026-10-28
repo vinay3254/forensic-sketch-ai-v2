@@ -9,6 +9,8 @@ import type {
   QuestionBank,
   RefineResult,
   User,
+  Variant,
+  VariantKind,
   Version,
 } from './types'
 
@@ -63,6 +65,10 @@ export const revert = (caseId: number, versionId: number) =>
 
 export const makePhoto = (caseId: number, versionId: number) =>
   post<Version>(`/api/cases/${caseId}/versions/${versionId}/photo`)
+
+export const listVariants = (caseId: number) => request<Variant[]>(`/api/cases/${caseId}/variants`)
+export const makeVariant = (caseId: number, versionId: number, kind: VariantKind) =>
+  post<Variant>(`/api/cases/${caseId}/versions/${versionId}/variants`, { kind })
 
 export const exportUrl = (caseId: number, versionId: number, style: 'photo' | 'sketch') =>
   `/api/cases/${caseId}/versions/${versionId}/export?style=${style}`

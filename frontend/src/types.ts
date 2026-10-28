@@ -57,6 +57,33 @@ export interface ChatMsg {
   created_at: string
 }
 
+// mirrors backend/ai/prompts.py:VARIANTS
+export const VARIANT_KINDS = [
+  ['cap', 'Cap'],
+  ['brimmed_hat', 'Brimmed hat'],
+  ['hood', 'Hood'],
+  ['glasses', 'Glasses'],
+  ['sunglasses', 'Sunglasses'],
+  ['moustache', 'Moustache'],
+  ['full_beard', 'Full beard'],
+  ['goatee', 'Goatee'],
+  ['stubble', 'Stubble'],
+  ['shaved_head', 'Shaved head'],
+] as const
+
+export type VariantKind = (typeof VARIANT_KINDS)[number][0]
+
+export interface Variant {
+  id: number
+  version_id: number
+  version_no: number
+  kind: VariantKind
+  label: string
+  localized: boolean
+  image_url: string
+  created_at: string
+}
+
 export interface CaseDetail {
   case: Case
   versions: Version[]
@@ -117,6 +144,7 @@ export const AUDIT_ACTIONS = [
   'revert',
   'export',
   'make_photo',
+  'variant_create',
   'interview_start',
   'interview_assist',
   'interview_confirm',

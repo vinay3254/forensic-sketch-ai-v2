@@ -16,6 +16,7 @@ from backend.export.routes import router as export_router
 from backend.face.regions import FaceParser
 from backend.face.routes import router as face_router
 from backend.interview.routes import router as interview_router
+from backend.variants.routes import router as variants_router
 from backend.errors import register_error_handlers
 
 
@@ -56,6 +57,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(face_router)
     app.include_router(export_router)
     app.include_router(interview_router)
+    app.include_router(variants_router)
 
     @app.get("/health")
     def health():

@@ -7,6 +7,7 @@ import DescriptionForm from '../components/DescriptionForm'
 import FaceCanvas, { type View } from '../components/FaceCanvas'
 import InterviewLauncher from '../components/InterviewLauncher'
 import RefineChat from '../components/RefineChat'
+import VariantsPanel from '../components/VariantsPanel'
 import VersionStrip from '../components/VersionStrip'
 
 type Action =
@@ -118,6 +119,11 @@ export default function WorkspacePage() {
             }}
             onRevert={(versionId) => mutation.mutate({ kind: 'revert', versionId })}
           />
+        </section>
+      )}
+      {selected && (
+        <section className="rounded-lg bg-white p-4 shadow">
+          <VariantsPanel caseId={caseId} version={selected} />
         </section>
       )}
     </div>
