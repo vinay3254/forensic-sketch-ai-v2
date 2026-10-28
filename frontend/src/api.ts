@@ -116,6 +116,9 @@ export const getBody = (caseId: number) =>
 export const drawBody = (caseId: number) => post<BodyFigure>(`/api/cases/${caseId}/body`)
 
 export const getBodyModel = (caseId: number) => request<BodyModel | null>(`/api/cases/${caseId}/figure/reconstruction`)
+// MPFB2 human fitted to the full-body image, textured from front, side and back views (~45 s)
+export const buildRealisticBody = (caseId: number, bodyId: number) =>
+  post<BodyModel>(`/api/cases/${caseId}/figure/realistic`, { body_id: bodyId })
 export const reconstructBody = (caseId: number, bodyId: number) =>
   post<BodyModel>(`/api/cases/${caseId}/figure/reconstruct`, { body_id: bodyId })
 export const openBodyModel = (caseId: number, modelId: number) =>

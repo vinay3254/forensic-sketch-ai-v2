@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     head3d_url: str = ""
     # Blender figure worker (blender_worker/server.py), e.g. http://127.0.0.1:8020; empty turns it off
     figure_url: str = ""
+    # Realistic body (backend/figure/realistic.py): MPFB2 and the pose model, fetched by
+    # scripts/fetch_realistic_body.py into storage/realistic/; built with the blender_worker Python
+    blender_python: str = "blender_worker/.venv/bin/python"
     ai_mock: bool = False
 
 

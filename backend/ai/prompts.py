@@ -203,3 +203,17 @@ def apply_edits(a: Attributes, edits: list[Edit]) -> Attributes:
         old = data.get(e.region)
         data[e.region] = f"{old}, {e.change}" if old else e.change
     return Attributes(**data)
+
+
+_VIEW_COMMON = (
+    "Keep exactly the same person: same face, head, hair, facial hair, body build, height and proportions, same "
+    "clothes and shoes, same black and white pencil drawing style, plain white background, the whole body visible "
+    "from head to feet, standing straight with arms relaxed at the sides, at the same size and position in the frame."
+)
+# extra views of the full-body figure for the realistic 3D body (backend/figure/realistic.py)
+VIEW_PROMPTS = {
+    "side": "Redraw this full-body pencil drawing as a strict side profile view: the person is turned 90 degrees so "
+            "that they face the right edge of the picture and we see their right side. " + _VIEW_COMMON,
+    "back": "Redraw this full-body pencil drawing as a back view: the person is turned around so we see their back "
+            "and the back of their head, not their face. " + _VIEW_COMMON,
+}
