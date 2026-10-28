@@ -83,3 +83,21 @@ def test_sheet_export_is_audited(client, case_id, login):
     login(client, "admin", "adminpass")
     row = client.get(f"/api/audit?action=export&case_id={case_id}").json()["items"][0]
     assert row["version_id"] == v["id"] and row["detail"] == {"style": "sheet", "format": "pdf"}
+
+
+def test_long_text_stops_at_the_column_bottom():
+    from PIL import ImageDraw
+
+    from backend.sheet.render import section
+
+    draw = ImageDraw.Draw(Image.new("L", (3508, 2480), 255))
+    rows = [(f"Field {i}", "very long witness words " * 20) for i in range(15)]
+    y = section(draw, 100, 400, 1260, "Face", rows, max_y=1500)
+    assert y <= 1500
+
+
+def test_long_title_is_shortened_in_the_header():
+    from backend.sheet.render import header_title
+
+    t = header_title("BLR-2026-0001", "x" * 200)
+    assert len(t) <= 70 and t.startswith("Case BLR-2026-0001")

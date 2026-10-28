@@ -55,9 +55,16 @@ def paste_framed(page: Image.Image, img: Image.Image, x: int, y: int, w: int, h:
     return box
 
 
-def section(draw: ImageDraw.ImageDraw, x: int, y: int, width: int, title: str, rows: list[tuple[str, str]]) -> int:
-    """Heading plus label/value rows with wrapped values; returns the y below it."""
-    if not rows:
+def header_title(case_number: str, title: str) -> str:
+    return textwrap.shorten(f"Case {case_number} · {title}", 70, placeholder="…")
+
+
+def section(
+    draw: ImageDraw.ImageDraw, x: int, y: int, width: int, title: str, rows: list[tuple[str, str]], max_y: int
+) -> int:
+    """Heading plus label/value rows with wrapped values; returns the y below it. Text that would
+    pass `max_y` is cut with a pointer to the case file, so it never runs into the variants."""
+    if not rows or y + 140 > max_y:
         return y
     draw.text((x, y), title.upper(), fill=INK, font=font(46))
     y += 62
@@ -65,13 +72,21 @@ def section(draw: ImageDraw.ImageDraw, x: int, y: int, width: int, title: str, r
     y += 18
     label_w, size = 330, 38
     chars = max(20, (width - label_w) // (size // 2 + 1))
+    step = size + 10
     for label, value in rows:
+        lines = textwrap.wrap(value, chars) or [""]
+        if y + step * 2 > max_y:  # room for one more line plus the cut note
+            draw.text((x, y), "… more in the case file", fill=GREY, font=font(size))
+            return min(y + step, max_y)
         draw.text((x, y), label, fill=GREY, font=font(size))
-        for line in textwrap.wrap(value, chars) or [""]:
+        room = (max_y - y) // step - 1
+        if len(lines) > room:
+            lines = lines[: room - 1] + ["… more in the case file"]
+        for line in lines:
             draw.text((x + label_w, y), line, fill=INK, font=font(size))
-            y += size + 10
+            y += step
         y += 8
-    return y + 30
+    return min(y + 30, max_y)
 
 
 def render_sheet(d: SheetData) -> Image.Image:
@@ -80,14 +95,14 @@ def render_sheet(d: SheetData) -> Image.Image:
 
     # header
     draw.text((M, M), "COMPOSITE SKETCH", fill=INK, font=font(96))
-    draw.text((M, M + 120), f"Case {d.case_number} · {d.title}", fill=INK, font=font(52))
+    draw.text((M, M + 120), header_title(d.case_number, d.title), fill=INK, font=font(52))
     meta = [
         (label, d.details[key])
         for key, label in [("requesting_unit", "Requesting unit"), ("reference", "Reference"), ("offence", "Offence")]
         if d.details.get(key)
     ] + [("Date", d.exported_at[:10])]
     for i, (label, value) in enumerate(meta):
-        draw.text((W - M - 1300, M + 10 + i * 52), f"{label}: {textwrap.shorten(value, 60)}", fill=INK, font=font(40))
+        draw.text((W - M - 1300, M + 10 + i * 52), f"{label}: {textwrap.shorten(value, 52)}", fill=INK, font=font(40))
     draw.line((M, M + 230, W - M, M + 230), fill=INK, width=6)
 
     top = M + 270
@@ -104,9 +119,11 @@ def render_sheet(d: SheetData) -> Image.Image:
         for k, label in FACE_LABELS.items()
         if d.attributes.get(k)
     ]
-    y = section(draw, x, top, width, "Face", face)
-    y = section(draw, x, y, width, "Person", [(lbl, d.details[k]) for k, lbl in PERSON_LABELS.items() if d.details.get(k)])
-    section(draw, x, y, width, "Incident", [(lbl, d.details[k]) for k, lbl in INCIDENT_LABELS.items() if d.details.get(k)])
+    person = [(lbl, d.details[k]) for k, lbl in PERSON_LABELS.items() if d.details.get(k)]
+    incident = [(lbl, d.details[k]) for k, lbl in INCIDENT_LABELS.items() if d.details.get(k)]
+    y = section(draw, x, top, width, "Face", face, bottom)
+    y = section(draw, x, y, width, "Person", person, bottom)
+    section(draw, x, y, width, "Incident", incident, bottom)
 
     # full-body figure with the witness's height beside a bar
     rx, rw = M + 2420, W - 2 * M - 2420
