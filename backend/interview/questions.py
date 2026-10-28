@@ -49,3 +49,6 @@ EXTRAS = [
 
 def all_prompts() -> list[str]:
     return [FREE_RECALL["prompt"]] + [q["prompt"] for q in FEATURES + EXTRAS]
+
+
+PROMPTS = {q["key"]: q["prompt"] for q in FEATURES + EXTRAS}

@@ -92,3 +92,21 @@ class AuditLog(SQLModel, table=True):
     detail: dict = Field(default_factory=dict, sa_column=Column(JSON, nullable=False))
     prev_hash: str
     hash: str
+
+
+class Interview(SQLModel, table=True):
+    """Officer-led witness interview. Answers are stored exactly as entered; once
+    confirmed the transcript is locked and its hash goes to the audit log."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    case_id: int = Field(foreign_key="case.id", index=True)
+    status: str = "draft"  # "draft" | "confirmed"
+    free_recall: str = ""
+    free_recall_source: str | None = None  # "typed" | "speech" | "mixed"
+    # [{key, prompt, answer, status, source}]; prompt is copied from the fixed bank
+    answers: list = Field(default_factory=list, sa_column=Column(JSON, nullable=False))
+    created_by: int = Field(foreign_key="user.id")
+    created_at: datetime = ts_field()
+    confirmed_by: int | None = Field(default=None, foreign_key="user.id")
+    confirmed_at: datetime | None = Field(default=None, sa_column=Column(UTCDateTime(), nullable=True))
+    transcript_hash: str | None = None

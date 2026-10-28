@@ -114,6 +114,7 @@ export const AUDIT_ACTIONS = [
   'revert',
   'export',
   'make_photo',
+  'interview_start',
   'audit_view',
   'access_denied',
 ] as const
