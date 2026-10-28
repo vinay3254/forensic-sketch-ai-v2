@@ -182,6 +182,9 @@ def _cap(J: dict):
 def build(p: Params) -> list:
     """Replace the scene's figure with one built from `p`; returns the new objects."""
     for obj in list(bpy.data.objects):
+        if obj.get("trace_reconstruction"):
+            obj.hide_set(True)
+            obj.hide_render = True
         if obj.get("trace_figure"):
             bpy.data.objects.remove(obj, do_unlink=True)
     for mesh in list(bpy.data.meshes):
@@ -203,7 +206,39 @@ def build(p: Params) -> list:
 
 def export_glb(path: str) -> None:
     bpy.ops.export_scene.gltf(filepath=path, export_format="GLB", export_apply=True, use_selection=False,
-                              export_cameras=False, export_lights=False, export_materials="EXPORT")
+                              export_cameras=False, export_lights=False, export_materials="EXPORT", use_visible=True)
+
+
+def import_glb(data: bytes) -> list:
+    """Import an image reconstruction, replacing only objects owned by TRACE."""
+    import struct
+
+    if len(data) < 12 or struct.unpack("<4sII", data[:12]) != (b"glTF", 2, len(data)):
+        raise ValueError("Invalid GLB file")
+    path = tmp(".glb")
+    before = set(bpy.data.objects)
+    try:
+        with open(path, "wb") as file:
+            file.write(data)
+        bpy.ops.import_scene.gltf(filepath=path)
+        imported = set(bpy.data.objects) - before
+        if not any(obj.type == "MESH" for obj in imported):
+            for obj in imported:
+                bpy.data.objects.remove(obj, do_unlink=True)
+            raise ValueError("GLB contains no mesh")
+        for obj in before:
+            if obj.get("trace_figure") or obj.get("trace_reconstruction"):
+                obj.hide_set(True)
+                obj.hide_render = True
+        for obj in imported:
+            obj["trace_reconstruction"] = True
+        return list(imported)
+    except Exception:
+        for obj in set(bpy.data.objects) - before:
+            bpy.data.objects.remove(obj, do_unlink=True)
+        raise
+    finally:
+        os.unlink(path)
 
 
 def setup_render_scene() -> None:

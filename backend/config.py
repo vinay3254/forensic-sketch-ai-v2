@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     llm_base_url: str = ""
     llm_api_key: str = ""
     llm_chat_model: str = ""
+    llm_blender_model: str = ""  # connected coding/vision model; falls back to llm_chat_model
+    blender_bin: str = "blender"  # packaged Blender executable for isolated background builds
     llm_image_model: str = ""
     llm_image_size: str = "1024x1536"
     llm_image_quality: str = "medium"
@@ -28,7 +30,7 @@ class Settings(BaseSettings):
     # paste the old sketch back outside the edited regions; needs storage/models/face_parser.onnx
     # (scripts/fetch_face_parser.py), otherwise refines keep the raw edit
     edit_localize: bool = True
-    # 3D head worker (head3d/server.py), e.g. http://127.0.0.1:8010; empty turns the 3D head off
+    # Local head and full-body reconstruction worker (head3d/server.py); empty disables both.
     head3d_url: str = ""
     # Blender figure worker (blender_worker/server.py), e.g. http://127.0.0.1:8020; empty turns it off
     figure_url: str = ""

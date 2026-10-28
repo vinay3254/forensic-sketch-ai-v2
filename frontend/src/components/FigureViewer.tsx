@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
@@ -6,13 +6,28 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 interface Props {
   glb: ArrayBuffer | null
   heightCm: number
+  preserveMaterials?: boolean
 }
 
 const PAPER = '#f4f1ea'
 const GRAPHITE = '#2a2823'
 
+function disposeObject(root: THREE.Object3D) {
+  root.traverse((object) => {
+    if (object instanceof THREE.Mesh || object instanceof THREE.LineSegments) {
+      object.geometry.dispose()
+      const materials = Array.isArray(object.material) ? object.material : [object.material]
+      for (const material of materials) {
+        for (const value of Object.values(material)) if (value instanceof THREE.Texture) value.dispose()
+        material.dispose()
+      }
+    }
+  })
+}
+
 // the Blender mannequin drawn like a pencil study: flat paper tones, graphite outlines, a height ruler
-export default function FigureViewer({ glb, heightCm }: Props) {
+export default function FigureViewer({ glb, heightCm, preserveMaterials = false }: Props) {
+  const [loadError, setLoadError] = useState<string | null>(null)
   const box = useRef<HTMLDivElement>(null)
   const stage = useRef<{ scene: THREE.Scene; figure: THREE.Group; ruler: THREE.Group; render: () => void } | null>(null)
 
@@ -35,17 +50,20 @@ export default function FigureViewer({ glb, heightCm }: Props) {
       camera.left = (-h * aspect) / 2
       camera.right = (h * aspect) / 2
       // the camera looks level at the floor line; the frame runs from just below the feet to 2.35 m
-      camera.top = h - 0.05
-      camera.bottom = -0.05
+      camera.top = h / 2
+      camera.bottom = -h / 2
       camera.updateProjectionMatrix()
       renderer.setSize(el.clientWidth, el.clientHeight)
     }
-    camera.position.set(0, 0, 8)
+    camera.position.set(0, 1.15, 8)
     const controls = new OrbitControls(camera, renderer.domElement)
-    controls.target.set(0, 0, 0) // turning only spins about the vertical axis, so aiming at the floor is fine
+    controls.target.set(0, 1.15, 0)
     controls.enablePan = false
-    controls.enableZoom = false
+    controls.enableZoom = true
+    controls.minZoom = 0.7
+    controls.maxZoom = 4
     controls.minPolarAngle = controls.maxPolarAngle = Math.PI / 2 // turn around, never tilt
+    controls.update()
     frame()
     const figure = new THREE.Group()
     const ruler = new THREE.Group()
@@ -62,6 +80,7 @@ export default function FigureViewer({ glb, heightCm }: Props) {
     return () => {
       ro.disconnect()
       controls.dispose()
+      disposeObject(scene)
       renderer.dispose()
       el.removeChild(renderer.domElement)
       stage.current = null
@@ -71,11 +90,20 @@ export default function FigureViewer({ glb, heightCm }: Props) {
   // swap in each new model as it arrives
   useEffect(() => {
     const s = stage.current
-    if (!s || !glb) return
-    new GLTFLoader().parse(glb.slice(0), '', (gltf) => {
+    if (!s) return
+    let cancelled = false
+    const dispose = () => {
+      disposeObject(s.figure)
       s.figure.clear()
+    }
+    if (!glb) { dispose(); s.render(); return }
+    new GLTFLoader().parse(glb.slice(0), '', (gltf) => {
+      if (cancelled) { disposeObject(gltf.scene); return }
+      dispose()
+      setLoadError(null)
       gltf.scene.traverse((o) => {
         if (!(o instanceof THREE.Mesh)) return
+        if (preserveMaterials) return
         const tone = (o.material as THREE.MeshStandardMaterial).color?.clone() ?? new THREE.Color(PAPER)
         o.material = new THREE.MeshLambertMaterial({ color: tone.lerp(new THREE.Color(PAPER), 0.25) })
         const lines = new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry, 32), new THREE.LineBasicMaterial({ color: GRAPHITE }))
@@ -83,13 +111,17 @@ export default function FigureViewer({ glb, heightCm }: Props) {
       })
       s.figure.add(gltf.scene)
       s.render()
+    }, (error) => {
+      if (!cancelled) setLoadError(`Could not display this model: ${error instanceof Error ? error.message : 'invalid GLB'}`)
     })
-  }, [glb])
+    return () => { cancelled = true }
+  }, [glb, preserveMaterials])
 
   // a ruler beside the figure, ticked every 10 cm up to the figure's height
   useEffect(() => {
     const s = stage.current
     if (!s) return
+    disposeObject(s.ruler)
     s.ruler.clear()
     const h = heightCm / 100
     const pts: THREE.Vector3[] = [new THREE.Vector3(0.62, 0, 0), new THREE.Vector3(0.62, h, 0)]
@@ -106,6 +138,7 @@ export default function FigureViewer({ glb, heightCm }: Props) {
   return (
     <div className="relative h-full w-full">
       <div ref={box} className="h-full w-full cursor-grab" />
+      {loadError && <p role="alert" className="absolute inset-x-3 bottom-3 rounded-xl bg-red-50 p-3 text-[13px] text-red-700">{loadError}</p>}
       <span className="pointer-events-none absolute right-3 top-3 rounded-full bg-white/80 px-2.5 py-1 font-mono text-[11px] text-accent">
         {Math.round(heightCm)} cm
       </span>

@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+import threading
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,6 +20,9 @@ from backend.face.regions import FaceParser
 from backend.face.routes import router as face_router
 from backend.figure.client import HttpFigureWorker
 from backend.figure.routes import router as figure_router
+from backend.figure.reconstruction import router as reconstruction_router
+from backend.figure.modeling import LiveBlenderBuilder
+from backend.figure.modeling_routes import router as modeling_router
 from backend.head3d.client import HttpHead3DClient
 from backend.head3d.routes import router as head3d_router
 from backend.interview.routes import router as interview_router
@@ -55,6 +59,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.face_parser = make_face_parser(settings)
     app.state.head3d_client = HttpHead3DClient(settings.head3d_url) if settings.head3d_url else None
     app.state.figure_worker = HttpFigureWorker(settings.figure_url) if settings.figure_url else None
+    app.state.blender_builder = LiveBlenderBuilder(settings)
+    app.state.blender_slots = threading.BoundedSemaphore(2)
+    app.state.blender_build_lock = threading.Lock()
 
     app.add_middleware(
         CORSMiddleware,
@@ -80,6 +87,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(styles_router)
     app.include_router(head3d_router)
     app.include_router(figure_router)
+    app.include_router(reconstruction_router)
+    app.include_router(modeling_router)
 
     @app.get("/health")
     def health():

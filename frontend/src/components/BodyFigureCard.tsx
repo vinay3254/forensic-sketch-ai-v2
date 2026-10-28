@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { drawBody, getBody } from '../api'
+import { Link } from 'react-router-dom'
 
 export function useBody(caseId: number) {
   return useQuery({ queryKey: ['body', caseId], queryFn: () => getBody(caseId) })
@@ -28,6 +29,7 @@ export default function BodyFigureCard({ caseId, unsaved }: { caseId: number; un
       </div>
       {draw.isError && <p className="rounded-lg bg-red-50 p-2 text-[13px] text-red-700">{draw.error.message}</p>}
       {body.data && <img src={body.data.image_url} alt="Full-body figure" className="max-h-72 self-center rounded-lg object-contain mix-blend-multiply" />}
+      {body.data && <Link to={`/cases/${caseId}/figure`} className="self-end text-[13px] font-medium text-accent underline underline-offset-4">Build 3D from this image →</Link>}
     </div>
   )
 }

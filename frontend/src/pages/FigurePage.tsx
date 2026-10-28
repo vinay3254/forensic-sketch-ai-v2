@@ -5,6 +5,7 @@ import { useParams } from 'react-router-dom'
 import { ApiError, figureBlendUrl, figureModel, getFigure, promptFigure, putFigure, saveFigure } from '../api'
 import Composer from '../components/Composer'
 import FigureViewer from '../components/FigureViewer'
+import ReconstructedFigure from '../components/ReconstructedFigure'
 import PageHeader, { btnDark, btnLight } from '../components/PageHeader'
 import type { FigureParams } from '../types'
 
@@ -24,6 +25,17 @@ const nice = (v: string) => (v === 'tshirt' ? 'T-shirt' : v === 'none' ? 'None' 
 
 // a Blender mannequin the officer shapes by typing or with sliders; it redraws as they go
 export default function FigurePage() {
+  const [mode, setMode] = useState<'image' | 'mannequin'>('image')
+  return <>
+    <div className="mb-3 flex gap-2" aria-label="Figure mode">
+      <button className={mode === 'image' ? btnDark : btnLight} aria-pressed={mode === 'image'} onClick={() => setMode('image')}>From image</button>
+      <button className={mode === 'mannequin' ? btnDark : btnLight} aria-pressed={mode === 'mannequin'} onClick={() => setMode('mannequin')}>Mannequin editor</button>
+    </div>
+    {mode === 'image' ? <ReconstructedFigure /> : <MannequinFigure />}
+  </>
+}
+
+function MannequinFigure() {
   const caseId = Number(useParams().id)
   const queryClient = useQueryClient()
   const state = useQuery({ queryKey: ['figure', caseId], queryFn: () => getFigure(caseId) })
@@ -95,7 +107,7 @@ export default function FigurePage() {
         actions={
           <>
             <a href={figureBlendUrl(caseId)} download className={`${btnLight} flex items-center gap-1.5`}>
-              <Download size={14} /> Open in Blender
+              <Download size={14} /> Download .blend
             </a>
             <button onClick={() => save.mutate()} disabled={save.isPending || off} className={`${btnDark} flex items-center gap-1.5`}>
               <Save size={14} /> {save.isPending ? 'Rendering… (~5 s)' : save.isSuccess ? 'Saved to case sheet' : 'Save to case sheet'}

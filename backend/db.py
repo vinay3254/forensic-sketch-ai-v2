@@ -14,6 +14,11 @@ def init_db(engine: Engine) -> None:
 
     SQLModel.metadata.create_all(engine)
     add_missing_columns(engine)
+    # create_all skips indexes on an already existing table; install this additive index too.
+    from backend.models import BlenderJob
+    for index in BlenderJob.__table__.indexes:
+        if index.name == 'unique_active_blender_case':
+            index.create(engine, checkfirst=True)
 
 
 def add_missing_columns(engine: Engine) -> None:
