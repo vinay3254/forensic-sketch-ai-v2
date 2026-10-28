@@ -20,8 +20,9 @@ FEMALE = ["Lakshmi", "Priya", "Kavya", "Asha", "Fathima", "Divya", "Rekha", "Mee
           "Pooja", "Sowmya", "Nandini", "Ayesha", "Geetha", "Mary", "Swathi", "Radha", "Bhavya", "Sunitha"]
 SURNAMES = ["Kumar", "Gowda", "Reddy", "Shetty", "Naik", "Rao", "Khan", "Sharma", "Patil", "Hegde", "Nair",
             "Iyer", "Pasha", "D'Souza", "Murthy", "Babu", "Singh", "Shaikh", "Pillai", "Yadav", "Prasad", "Achar"]
-ALIASES = ["Kencha", "Tiger", "Chotu", "Bonda", "Kaalia", "Pappu", "Guddu", "Sultan", "Babloo", "Raja", "Bhai",
-           "Kariya", "Long", "Silent", "Gunda", "Puttu", "Bullet", "Scooter", "Kitty", "Rani", "Chikka", "Dabba"]
+MALE_ALIASES = ["Kencha", "Tiger", "Chotu", "Bonda", "Kaalia", "Pappu", "Guddu", "Sultan", "Babloo", "Raja", "Bhai",
+                "Kariya", "Long", "Silent", "Puttu", "Bullet", "Scooter", "Chikka", "Dabba"]
+FEMALE_ALIASES = ["Kitty", "Rani", "Chinni", "Pinky", "Baby", "Silent", "Bullet", "Ammu", "Chotti", "Gowri"]
 AREAS = ["Hebbal", "Yelahanka", "Whitefield", "Indiranagar", "Koramangala", "Jayanagar", "Malleshwaram",
          "Rajajinagar", "Banashankari", "K R Puram", "Marathahalli", "HSR Layout", "Shivajinagar", "Upparpet",
          "Electronic City", "Kengeri", "Yeshwanthpur", "R T Nagar", "Hennur", "Madiwala"]
@@ -72,7 +73,7 @@ def seed_records(session: Session, faces: list[dict], seed: int = 7) -> int:
         male = (face.get("gender") or "").lower().startswith("m")
         first = rng.choice(MALE if male else FEMALE)
         name = f"{first} {rng.choice(SURNAMES)}"
-        alias = rng.choice(ALIASES) if rng.random() < 0.45 else None
+        alias = rng.choice(MALE_ALIASES if male else FEMALE_ALIASES) if rng.random() < 0.45 else None
         home = rng.choice(AREAS)
         marks = ", ".join(rng.sample(MARKS, rng.choice([0, 1, 1, 2])))
         height = rng.randint(162, 186) if male else rng.randint(148, 170)
