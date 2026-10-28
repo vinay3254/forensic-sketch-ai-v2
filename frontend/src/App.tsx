@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { FolderSearch, Home, LogOut, PenLine, Search, ShieldCheck } from 'lucide-react'
+import { FolderSearch, Home, LogOut, PenLine, Search, ShieldCheck, UsersRound } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useMatch, useNavigate } from 'react-router-dom'
 import { listCases, logout, me } from './api'
@@ -10,6 +10,8 @@ import Splash from './components/Splash'
 import TraceMark from './components/TraceMark'
 import { recentCases, RECENT_EVENT, rememberVisit } from './lib/recent'
 import AuditPage from './pages/AuditPage'
+import OversightPage from './pages/OversightPage'
+import OversightUserPage from './pages/OversightUserPage'
 import RecordPage from './pages/RecordPage'
 import RecordsPage from './pages/RecordsPage'
 import CasesPage from './pages/CasesPage'
@@ -123,9 +125,14 @@ function Shell({ user, children }: { user: User; children: ReactNode }) {
               <FolderSearch size={16} /> Records
             </NavLink>
             {user.role === 'admin' && (
-              <NavLink to="/audit" className={navItem}>
-                <ShieldCheck size={16} /> Audit log
-              </NavLink>
+              <>
+                <NavLink to="/oversight" className={navItem}>
+                  <UsersRound size={16} /> Oversight
+                </NavLink>
+                <NavLink to="/audit" className={navItem}>
+                  <ShieldCheck size={16} /> Audit log
+                </NavLink>
+              </>
             )}
           </nav>
           <RecentCases caseId={caseId} />
@@ -248,6 +255,22 @@ export default function App() {
         element={
           <Guard>
             <RecordPage />
+          </Guard>
+        }
+      />
+      <Route
+        path="/oversight"
+        element={
+          <Guard admin>
+            <OversightPage />
+          </Guard>
+        }
+      />
+      <Route
+        path="/oversight/users/:uid"
+        element={
+          <Guard admin>
+            <OversightUserPage />
           </Guard>
         }
       />

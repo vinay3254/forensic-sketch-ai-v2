@@ -1,6 +1,7 @@
 import type {
   AuditFilters,
   AuditPage,
+  AuditRow,
   AuditVerify,
   BodyFigure,
   BodyModel,
@@ -15,6 +16,9 @@ import type {
   InterviewDraft,
   Proportions,
   QuestionBank,
+  Oversight,
+  UserCase,
+  UserSession,
   RecordDetail,
   RecordSearch,
   StyleCategory,
@@ -200,3 +204,14 @@ export const searchRecords = (f: { q?: string; status?: string; area?: string })
   return request<RecordSearch>(`/api/records?${p}`)
 }
 export const getRecord = (id: number) => request<RecordDetail>(`/api/records/${id}`)
+
+export const oversight = () => request<Oversight>('/api/admin/overview')
+export const assignSupervisor = (userId: number, adminId: number | null) =>
+  request<{ user_id: number; supervisor_id: number | null }>(`/api/admin/users/${userId}/supervisor`, {
+    method: 'PUT',
+    body: JSON.stringify({ admin_id: adminId }),
+  })
+export const userSessions = (userId: number) => request<UserSession[]>(`/api/admin/users/${userId}/sessions`)
+export const sessionTimeline = (userId: number, loginId: number) =>
+  request<Omit<AuditRow, 'prev_hash' | 'hash'>[]>(`/api/admin/users/${userId}/sessions/${loginId}`)
+export const userCases = (userId: number) => request<UserCase[]>(`/api/admin/users/${userId}/cases`)

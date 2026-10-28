@@ -260,6 +260,8 @@ export const AUDIT_ACTIONS = [
   'translate',
   'record_search',
   'record_view',
+  'oversight_view',
+  'supervisor_assign',
   'interview_confirm',
   'audit_view',
   'access_denied',
@@ -399,4 +401,58 @@ export interface RecordDetail extends RecordSummary {
   build: string
   source: string
   charges: RecordCharge[]
+}
+
+// admin oversight (backend/oversight): investigators and admins, from the audit log
+export interface OversightPerson {
+  user_id: number
+  username: string
+  role: string
+  supervisor_id: number | null
+  supervisor: string | null
+  logins: number
+  logouts: number
+  failed_logins: number
+  last_login: string | null
+  last_logout: string | null
+  last_seen: string | null
+  active_now: boolean
+  sessions: number
+  actions: number
+  cases: number
+  cases_created: number
+  sketches: number
+  denied: number
+}
+
+export interface Oversight {
+  team: OversightPerson[]
+  admins: OversightPerson[]
+  admin_choices: { id: number; username: string }[]
+  totals: { investigators: number; mine: number; unassigned: number; active_now: number; logins: number; failed_logins: number; cases: number }
+}
+
+export type SessionEnd = 'logout' | 'new_login' | 'expired' | 'active'
+
+export interface UserSession {
+  id: number
+  start: string
+  end: string | null
+  end_reason: SessionEnd
+  ip: string | null
+  user_agent: string | null
+  actions: number
+  by_action: Record<string, number>
+  cases: { id: number; case_number: string; title: string }[]
+}
+
+export interface UserCase {
+  case_id: number
+  case_number: string | null
+  title: string
+  owned: boolean
+  first: string
+  last: string
+  actions: number
+  by_action: Record<string, number>
 }

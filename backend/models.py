@@ -33,6 +33,8 @@ class User(SQLModel, table=True):
     username: str = Field(unique=True, index=True)
     password_hash: str
     role: str  # "officer" | "admin"
+    # the admin who oversees this investigator's activity (backend/oversight); None = any admin
+    supervisor_id: int | None = Field(default=None, foreign_key="user.id")
     created_at: datetime = ts_field()
 
 
