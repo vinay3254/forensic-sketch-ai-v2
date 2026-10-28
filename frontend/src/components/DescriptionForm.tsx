@@ -18,29 +18,32 @@ export default function DescriptionForm({ busy, replacing, onSubmit, onCancel }:
   }
 
   return (
-    <form onSubmit={submit} className="flex h-full flex-col gap-3">
-      <h2 className="font-semibold">Witness description</h2>
+    <form onSubmit={submit} className="flex h-full min-h-0 flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <div className="size-2 rounded-full bg-violet" />
+        <span className="text-[15px] font-semibold">Witness description</span>
+      </div>
       <textarea
         value={text}
         maxLength={MAX_TEXT}
         disabled={busy}
         onChange={(e) => setText(e.target.value)}
         placeholder="Describe the face: age, skin tone, face shape, eyes, nose, hair, marks…"
-        className="min-h-60 flex-1 resize-none rounded border p-3 text-sm disabled:bg-slate-50"
+        className="min-h-40 flex-1 resize-none rounded-2xl border border-line bg-field p-3.5 text-[13px] leading-[1.55] disabled:opacity-60"
       />
-      <div className="flex items-center gap-2 text-sm">
-        <span className="text-slate-500">
-          {text.length}/{MAX_TEXT}
+      <div className="flex items-center gap-2 text-[13px]">
+        <span className="font-mono text-[11px] text-faint">
+          {text.length} / {MAX_TEXT}
         </span>
         {onCancel && (
-          <button type="button" onClick={onCancel} disabled={busy} className="ml-auto rounded px-3 py-2 hover:bg-slate-100">
+          <button type="button" onClick={onCancel} disabled={busy} className="ml-auto rounded-full px-3 py-2 text-muted hover:text-ink">
             Cancel
           </button>
         )}
         <button
           type="submit"
           disabled={busy || !text.trim()}
-          className={`${onCancel ? '' : 'ml-auto '}rounded bg-slate-900 px-4 py-2 text-white disabled:opacity-50`}
+          className={`${onCancel ? '' : 'ml-auto '}rounded-full bg-ink px-[18px] py-2.5 font-medium text-white hover:bg-ink-2 disabled:opacity-50`}
         >
           {replacing ? 'Generate new sketch' : 'Generate'}
         </button>

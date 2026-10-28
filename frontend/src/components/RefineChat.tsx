@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { ChatMsg } from '../types'
 import { MAX_TEXT } from './DescriptionForm'
 
+const SUGGESTIONS = ['Make the jaw wider', 'Thicker eyebrows', 'Shorter hair']
+
 interface Props {
   chat: ChatMsg[]
   busy: boolean
@@ -19,42 +21,61 @@ export default function RefineChat({ chat, busy, onSend, onStartOver }: Props) {
 
   function submit(e: FormEvent) {
     e.preventDefault()
+    if (!text.trim()) return
     onSend(text.trim())
     setText('')
   }
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3">
-      <div className="flex items-center">
-        <h2 className="font-semibold">Refine</h2>
-        <button onClick={onStartOver} disabled={busy} className="ml-auto text-sm text-blue-700 hover:underline disabled:opacity-50">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="size-2 rounded-full bg-violet" />
+          <span className="text-[15px] font-semibold">Refine</span>
+        </div>
+        <button onClick={onStartOver} disabled={busy} className="text-[13px] text-link hover:text-ink disabled:opacity-50">
           Start over
         </button>
       </div>
-      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto rounded border bg-slate-50 p-3 text-sm">
-        {chat.map((m) => (
-          <div key={m.id} className={m.role === 'user' ? 'flex justify-end' : 'flex'}>
-            <p
-              className={`max-w-[85%] whitespace-pre-wrap rounded-lg px-3 py-2 ${
-                m.role === 'user' ? 'bg-slate-900 text-white' : 'bg-white shadow-sm'
+      <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto pr-0.5">
+        {chat.map((m) => {
+          const me = m.role === 'user'
+          return (
+            <div
+              key={m.id}
+              className={`max-w-[88%] px-3.5 py-3 ${
+                me ? 'self-end rounded-[16px_16px_4px_16px] bg-ink text-white' : 'self-start rounded-[16px_16px_16px_4px] bg-tint text-ink'
               }`}
             >
-              {m.content}
-            </p>
-          </div>
-        ))}
+              <div className="mb-1.5 text-[11px] uppercase tracking-[0.06em] opacity-60">{me ? 'Prompt' : 'Assistant'}</div>
+              <div className="whitespace-pre-wrap text-[13px] leading-[1.55]">{m.content}</div>
+            </div>
+          )
+        })}
         <div ref={end} />
       </div>
-      <form onSubmit={submit} className="flex gap-2">
+      <div className="flex flex-wrap gap-1.5">
+        {SUGGESTIONS.map((s) => (
+          <button
+            key={s}
+            onClick={() => setText(s)}
+            disabled={busy}
+            className="rounded-full border border-line bg-field px-[11px] py-1.5 text-xs text-body hover:border-ink hover:text-ink disabled:opacity-50"
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+      <form onSubmit={submit} className="flex gap-1.5 rounded-2xl bg-tint p-1.5">
         <input
           value={text}
           maxLength={MAX_TEXT}
           disabled={busy}
           onChange={(e) => setText(e.target.value)}
           placeholder='e.g. "make the jaw wider"'
-          className="min-w-0 flex-1 rounded border px-3 py-2 text-sm disabled:bg-slate-50"
+          className="min-w-0 flex-1 rounded-[10px] border border-transparent bg-transparent p-2.5 text-[13px]"
         />
-        <button type="submit" disabled={busy || !text.trim()} className="rounded bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-50">
+        <button type="submit" disabled={busy || !text.trim()} className="rounded-[11px] bg-ink px-4 text-[13px] font-medium text-white disabled:opacity-50">
           Send
         </button>
       </form>

@@ -1,5 +1,35 @@
 @import 'tailwindcss';
 
+/* Case Workspace design (Claude Design): warm paper, ink, one violet accent */
+@theme {
+  --font-sans: 'Geist', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+  --color-ink: #17171a;
+  --color-ink-2: #33333a;
+  --color-paper: #eeeeeb;
+  --color-cream: #f3f1ea;
+  --color-field: #fafaf8;
+  --color-tint: #f4f4f1;
+  --color-line: #e2e2de;
+  --color-line-soft: #f2f2ef;
+  --color-muted: #6e6e76;
+  --color-faint: #8c8c93;
+  --color-ghost: #b5b5ba;
+  --color-body: #45454c;
+  --color-violet: #6c66e0;
+  --color-link: #4b45c6;
+  --color-lilac: #a9a6f0;
+  --color-side: #25252a;
+  --color-side-line: #2c2c31;
+  --color-side-text: #b9b9bf;
+}
+
 body {
-  @apply bg-slate-100 text-slate-900;
+  @apply bg-paper font-sans text-ink antialiased;
+}
+
+textarea:focus,
+input:focus {
+  outline: none;
+  border-color: var(--color-ink) !important;
 }
