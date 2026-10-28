@@ -38,9 +38,9 @@ export default function Composer({ placeholder, busy, chips = [], onSubmit, valu
   }
 
   return (
-    <div className="rounded-[22px] border border-white bg-white/70 p-3 shadow-[0_10px_30px_-18px_rgba(60,40,30,0.35)] backdrop-blur-xl">
+    <div className="rounded-[22px] border border-ink/10 bg-white/70 p-3 shadow-[0_10px_30px_-18px_rgba(60,40,30,0.35)] backdrop-blur-xl">
       <div className="flex items-start gap-2 px-1.5">
-        <span className="pt-2 text-violet">✦</span>
+        <span className="pt-2 text-accent">✦</span>
         <textarea
           value={text}
           rows={rows}

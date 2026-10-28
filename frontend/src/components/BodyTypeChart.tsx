@@ -20,7 +20,7 @@ export default function BodyTypeChart({ build, onPick, compact }: Props) {
           key={t.key}
           onClick={() => onPick(t.label)}
           className={`flex flex-col items-center gap-1.5 rounded-[14px] border-[1.5px] bg-field px-1 py-2.5 ${compact ? 'text-[11px]' : 'text-xs'} ${
-            isBuild(build, t.label) ? 'border-violet text-ink' : 'border-transparent text-body hover:border-line'
+            isBuild(build, t.label) ? 'border-accent text-ink' : 'border-transparent text-body hover:border-line'
           }`}
         >
           <img src={t.image_url} alt={t.label} className={`${compact ? 'h-[70px]' : 'h-[87px]'} object-contain mix-blend-multiply`} />

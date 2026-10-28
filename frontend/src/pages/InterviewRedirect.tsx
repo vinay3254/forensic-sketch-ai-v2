@@ -18,7 +18,7 @@ export default function InterviewRedirect() {
   if (iv) return <Navigate to={`/cases/${caseId}/interviews/${iv.id}`} replace />
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
-      <span className="grid size-12 place-items-center rounded-2xl bg-white/80 text-[#8f80e0]">
+      <span className="grid size-12 place-items-center rounded-2xl bg-white/80 text-ink">
         <MessagesSquare />
       </span>
       <h2 className="text-[20px] font-semibold">No witness interview yet</h2>

@@ -27,7 +27,7 @@ export default function DescriptionForm({
   return (
     <form onSubmit={submit} className="flex h-full min-h-0 flex-col gap-3">
       <div className="flex items-center gap-2">
-        <div className="size-2 rounded-full bg-violet" />
+        <div className="size-2 rounded-full bg-accent" />
         <span className="text-[15px] font-semibold">Witness description</span>
       </div>
       <textarea

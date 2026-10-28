@@ -68,7 +68,7 @@ export default function FaceCanvas({ versions, version, view, busy, onView, onSe
                 key={v.id}
                 onClick={() => onSelect(v.id)}
                 title={`v${v.version_no}: ${v.instruction}`}
-                className={`h-[62px] w-11 shrink-0 overflow-hidden rounded-lg ${v.id === version?.id ? 'outline-2 outline-offset-1 outline-violet' : ''}`}
+                className={`h-[62px] w-11 shrink-0 overflow-hidden rounded-lg ${v.id === version?.id ? 'outline-2 outline-offset-1 outline-accent' : ''}`}
               >
                 <img src={v.image_url} alt={`v${v.version_no}`} className="size-full object-cover" />
               </button>

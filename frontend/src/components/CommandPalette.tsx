@@ -88,7 +88,7 @@ export default function CommandPalette({ admin, caseId }: { admin: boolean; case
         role="dialog"
         aria-label="Jump to"
         onMouseDown={(e) => e.stopPropagation()}
-        className="w-[min(560px,92vw)] overflow-hidden rounded-[22px] border border-white bg-white/95 shadow-[0_30px_80px_-30px_rgba(40,20,10,0.5)]"
+        className="w-[min(560px,92vw)] overflow-hidden rounded-[22px] border border-ink/10 bg-white/95 shadow-[0_30px_80px_-30px_rgba(40,20,10,0.5)]"
       >
         <label className="flex items-center gap-3 border-b border-black/[0.06] px-5 py-4">
           <Search size={16} className="text-faint" />

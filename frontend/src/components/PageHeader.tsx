@@ -20,4 +20,4 @@ export default function PageHeader({ title, actions }: Props) {
 export const btnDark =
   'whitespace-nowrap rounded-full border-0 bg-ink px-[18px] py-2.5 text-[13px] font-medium text-white hover:bg-ink-2 disabled:opacity-50 cursor-pointer'
 export const btnLight =
-  'whitespace-nowrap rounded-full border border-white bg-white/80 px-4 py-[9px] text-[13px] text-ink hover:border-ink disabled:opacity-50 cursor-pointer'
+  'whitespace-nowrap rounded-full border border-ink/10 bg-white/80 px-4 py-[9px] text-[13px] text-ink hover:border-ink disabled:opacity-50 cursor-pointer'

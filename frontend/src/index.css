@@ -1,38 +1,54 @@
 @import 'tailwindcss';
 
-/* soft glass on a warm peach/lilac wash; ink for primary actions, one violet accent */
+/* sketch theme: graphite pencil on warm drawing paper, one red correction pencil for accents */
 @theme {
   --font-sans: 'Geist', system-ui, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, monospace;
-  --color-ink: #17171a;
-  --color-ink-2: #33333a;
-  --color-paper: #eeeeeb;
-  --color-cream: #f3f1ea;
-  --color-field: #fafaf8;
-  --color-tint: #f4f4f1;
-  --color-line: #e2e2de;
-  --color-line-soft: #f2f2ef;
-  --color-muted: #6e6e76;
-  --color-faint: #8c8c93;
-  --color-ghost: #b5b5ba;
-  --color-body: #45454c;
-  --color-violet: #6c66e0;
-  --color-link: #4b45c6;
-  --color-lilac: #a9a6f0;
-  --color-side: #25252a;
-  --color-side-line: #2c2c31;
-  --color-side-text: #b9b9bf;
+  --color-ink: #26241f; /* 8B graphite */
+  --color-ink-2: #3d3a34;
+  --color-paper: #ece7dc;
+  --color-cream: #f1ece1;
+  --color-field: #f7f4ec;
+  --color-tint: #efebe2;
+  --color-line: #ddd6c8;
+  --color-line-soft: #ebe6da;
+  --color-muted: #6f6a60; /* 2B */
+  --color-faint: #958f83; /* HB */
+  --color-ghost: #bdb6a8; /* 2H */
+  --color-body: #4a463f;
+  --color-accent: #b0442c; /* red pencil */
+  --color-accent-soft: #e8c4b8;
+  --color-link: #9a3a24;
+  --color-white: #fdfbf6; /* paper white */
+  /* older pages use slate and blue; draw them in graphite and red pencil too */
+  --color-slate-50: #f7f4ec;
+  --color-slate-100: #efebe2;
+  --color-slate-200: #e2dccf;
+  --color-slate-300: #cfc7b7;
+  --color-slate-400: #a39c8e;
+  --color-slate-500: #7d776b;
+  --color-slate-600: #625d53;
+  --color-slate-700: #4a463f;
+  --color-slate-800: #35322c;
+  --color-slate-900: #26241f;
+  --color-blue-50: #f6ebe5;
+  --color-blue-700: #9a3a24;
+  --color-blue-900: #5e2414;
 }
 
 body {
   @apply font-sans text-ink antialiased;
   margin: 0;
   min-height: 100vh;
+  /* paper grain over a soft vignette */
   background:
-    radial-gradient(60rem 40rem at 100% 100%, #f6c9b0 0%, transparent 60%),
-    radial-gradient(50rem 36rem at 0% 100%, #f3dccf 0%, transparent 55%),
-    radial-gradient(60rem 40rem at 50% 0%, #e9e7f3 0%, transparent 60%),
-    #ecebef;
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.16  0 0 0 0 0.15  0 0 0 0 0.13  0 0 0 0.09 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>"),
+    radial-gradient(80rem 50rem at 50% 30%, #f3efe6 0%, transparent 70%),
+    var(--color-paper);
+}
+
+::selection {
+  background: var(--color-accent-soft);
 }
 
 @media (prefers-reduced-motion: reduce) {

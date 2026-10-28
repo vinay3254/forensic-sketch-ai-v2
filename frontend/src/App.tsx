@@ -100,7 +100,7 @@ function Shell({ user, children }: { user: User; children: ReactNode }) {
 
   return (
     <div className="box-border h-screen p-4">
-      <div className="grid h-full grid-cols-[210px_minmax(0,1fr)] overflow-hidden rounded-[28px] border border-white/80 bg-white/45 shadow-[0_30px_80px_-40px_rgba(80,50,30,0.45)] backdrop-blur-2xl">
+      <div className="grid h-full grid-cols-[210px_minmax(0,1fr)] overflow-hidden rounded-[28px] border border-ink/10 bg-white/60 shadow-[0_30px_80px_-40px_rgba(38,36,31,0.45)] backdrop-blur-xl">
         <aside className="flex min-h-0 flex-col gap-6 overflow-y-auto border-r border-black/[0.06] px-3 py-6">
           <Link to="/cases" className="flex items-center gap-2 px-3 text-ink">
             <span className="grid size-7 place-items-center rounded-full bg-ink text-white">
@@ -123,9 +123,9 @@ function Shell({ user, children }: { user: User; children: ReactNode }) {
             )}
           </nav>
           <RecentCases caseId={caseId} />
-          <div className="mt-auto flex flex-col gap-3 rounded-[18px] border border-white/60 bg-[#c7c7cf]/45 p-3">
+          <div className="mt-auto flex flex-col gap-3 rounded-[18px] border border-ink/10 bg-ink/[0.05] p-3">
             <div className="flex items-center gap-2.5">
-              <div className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-[#f6c9b0] to-[#c9b8f0] text-sm font-semibold text-ink ring-2 ring-white">
+              <div className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-[#efebe2] to-[#cfc7b7] text-sm font-semibold text-ink ring-2 ring-white">
                 {user.username[0]?.toUpperCase()}
               </div>
               <div className="flex min-w-0 flex-col">

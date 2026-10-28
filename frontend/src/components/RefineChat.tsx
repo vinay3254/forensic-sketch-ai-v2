@@ -28,7 +28,7 @@ export default function RefineChat({ chat, busy, onSend, onStartOver }: Props) {
     <div className="flex h-full min-h-0 flex-col gap-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="size-2 rounded-full bg-violet" />
+          <div className="size-2 rounded-full bg-accent" />
           <span className="text-[15px] font-semibold">Refine</span>
         </div>
         <button onClick={onStartOver} disabled={busy} className="text-[13px] text-link hover:text-ink disabled:opacity-50">

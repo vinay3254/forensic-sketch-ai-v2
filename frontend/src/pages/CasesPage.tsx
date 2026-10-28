@@ -29,7 +29,7 @@ function CaseHistory({ cases, loading, onNew }: { cases: Case[]; loading: boolea
   const q = params.get('q') ?? ''
   const shown = cases.filter((c) => `${c.title} ${c.case_number}`.toLowerCase().includes(q.toLowerCase()))
   return (
-    <aside className="flex min-h-0 flex-col gap-4 rounded-[24px] border border-white bg-white/80 p-4 shadow-[0_10px_40px_-24px_rgba(60,40,30,0.4)]">
+    <aside className="flex min-h-0 flex-col gap-4 rounded-[24px] border border-ink/10 bg-white/80 p-4 shadow-[0_10px_40px_-24px_rgba(60,40,30,0.4)]">
       <div className="flex items-center justify-between">
         <h2 className="text-[17px] font-semibold">Case history</h2>
         <button onClick={onNew} title="New case" className="grid size-9 place-items-center rounded-full bg-tint text-body hover:text-ink">
@@ -122,10 +122,10 @@ export default function CasesPage() {
   const lastWithSketch = cases?.find((c) => c.version_count > 0)
 
   const cards = [
-    { icon: <PenLine className="text-[#e98e6a]" />, title: 'Draw a sketch', text: "Type the witness's description and get a pencil sketch", onClick: focus },
-    { icon: <MessagesSquare className="text-[#8f80e0]" />, title: 'Interview a witness', text: 'Guided, neutral questions in the witness’s own words', onClick: () => interview.mutate() },
+    { icon: <PenLine className="text-ink" />, title: 'Draw a sketch', text: "Type the witness's description and get a pencil sketch", onClick: focus },
+    { icon: <MessagesSquare className="text-ink" />, title: 'Interview a witness', text: 'Guided, neutral questions in the witness’s own words', onClick: () => interview.mutate() },
     {
-      icon: <FileText className="text-[#d58aa9]" />,
+      icon: <FileText className="text-accent" />,
       title: 'Latest case sheet',
       text: lastWithSketch ? `${lastWithSketch.title}` : 'Appears once a case has a sketch',
       onClick: () => lastWithSketch && navigate(`/cases/${lastWithSketch.id}/sheet`),
@@ -145,7 +145,7 @@ export default function CasesPage() {
                 key={c.title}
                 onClick={c.onClick}
                 disabled={interview.isPending}
-                className="flex flex-col gap-2 rounded-[18px] border border-white bg-white/80 p-4 text-left shadow-[0_8px_24px_-18px_rgba(60,40,30,0.5)] transition hover:-translate-y-0.5 hover:bg-white"
+                className="flex flex-col gap-2 rounded-[18px] border border-ink/10 bg-white/80 p-4 text-left shadow-[0_8px_24px_-18px_rgba(60,40,30,0.5)] transition hover:-translate-y-0.5 hover:bg-white"
               >
                 <span className="grid size-9 place-items-center rounded-xl bg-tint">{c.icon}</span>
                 <span className="mt-2 text-[14px] font-semibold text-ink">{c.title}</span>

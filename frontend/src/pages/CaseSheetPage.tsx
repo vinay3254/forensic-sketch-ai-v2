@@ -219,11 +219,11 @@ export default function CaseSheetPage() {
                           <button
                             onClick={() => make.mutate({ versionId: v.id, kind: s.kind })}
                             disabled={make.isPending}
-                            className="flex aspect-[3/4] w-full flex-col items-center justify-center gap-1 rounded-[10px] border-[1.5px] border-dashed border-[#d6d4cb] text-[11px] text-faint hover:border-violet hover:text-link disabled:cursor-wait"
+                            className="flex aspect-[3/4] w-full flex-col items-center justify-center gap-1 rounded-[10px] border-[1.5px] border-dashed border-[#d6d4cb] text-[11px] text-faint hover:border-accent hover:text-link disabled:cursor-wait"
                           >
                             <span className="font-mono text-[10px]">{String(i + 1).padStart(2, '0')}</span>
                             {pending === s.kind ? (
-                              <span className="size-4 animate-spin rounded-full border-2 border-line border-t-violet" />
+                              <span className="size-4 animate-spin rounded-full border-2 border-line border-t-accent" />
                             ) : (
                               'Generate'
                             )}

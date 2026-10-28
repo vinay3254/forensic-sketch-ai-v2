@@ -21,7 +21,7 @@ export default function AttributePanel({ caseId, version, busy, onMakePhoto }: P
         </span>
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-[#f0f0ec]">
-        <div className="h-full rounded-full bg-violet" style={{ width: `${Math.round((filled / ATTRIBUTE_KEYS.length) * 100)}%` }} />
+        <div className="h-full rounded-full bg-accent" style={{ width: `${Math.round((filled / ATTRIBUTE_KEYS.length) * 100)}%` }} />
       </div>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {ATTRIBUTE_KEYS.map((k) => {
