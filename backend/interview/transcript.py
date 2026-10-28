@@ -49,6 +49,12 @@ FIELDS_FOR = {
     "hairstyle": ("hair",),
     "glasses_accessories": ("accessories",),
     "distinguishing_features": ("marks",),
+    # body questions fill the case details (cases/details.py), not the face
+    "height": (),
+    "build": (),
+    "clothing": (),
+    "movement": (),
+    "voice": (),
 }
 
 LABELS = {q["key"]: q["label"] for q in FEATURES + EXTRAS}

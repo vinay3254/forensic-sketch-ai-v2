@@ -35,7 +35,10 @@ def test_bank_covers_the_spec_sections():
     assert [f["key"] for f in FEATURES] == [
         "age_gender", "skin_tone", "face_shape", "eyes", "eyebrows", "nose", "mouth", "ears", "jaw_chin",
     ]
-    assert [e["key"] for e in EXTRAS] == ["facial_hair", "hairstyle", "glasses_accessories", "distinguishing_features"]
+    assert [e["key"] for e in EXTRAS] == [
+        "facial_hair", "hairstyle", "glasses_accessories", "distinguishing_features",
+        "height", "build", "clothing", "movement", "voice",
+    ]
     assert all(e["optional"] for e in EXTRAS) and not any(f["optional"] for f in FEATURES)
 
 

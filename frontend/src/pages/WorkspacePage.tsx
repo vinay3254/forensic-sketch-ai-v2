@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom'
 import { ApiError, generate, getCase, makePhoto, refine, revert } from '../api'
 import AttributePanel from '../components/AttributePanel'
 import DescriptionForm from '../components/DescriptionForm'
+import DetailsPanel from '../components/DetailsPanel'
 import FaceCanvas, { type View } from '../components/FaceCanvas'
 import InterviewLauncher from '../components/InterviewLauncher'
 import RefineChat from '../components/RefineChat'
@@ -121,6 +122,9 @@ export default function WorkspacePage() {
           />
         </section>
       )}
+      <section className="rounded-lg bg-white p-4 shadow">
+        <DetailsPanel caseId={caseId} details={c.details} />
+      </section>
       {selected && (
         <section className="rounded-lg bg-white p-4 shadow">
           <VariantsPanel caseId={caseId} version={selected} />

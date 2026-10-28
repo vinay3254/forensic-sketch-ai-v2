@@ -13,7 +13,27 @@ export interface Case {
   status: string
   created_at: string
   created_by: number
+  details: CaseDetails
 }
+
+// mirrors backend/cases/details.py
+export const PERSON_FIELDS = [
+  ['height', 'Height'],
+  ['build', 'Build'],
+  ['clothing', 'Clothing'],
+  ['movement', 'Movement and walk'],
+  ['voice', 'Voice and speech'],
+  ['other_traits', 'Other traits'],
+] as const
+export const INCIDENT_FIELDS = [
+  ['approach', 'Approach'],
+  ['weapon', 'Weapon'],
+  ['offence', 'Offence'],
+  ['requesting_unit', 'Requesting unit'],
+  ['reference', 'Reference no.'],
+] as const
+export type DetailKey = (typeof PERSON_FIELDS)[number][0] | (typeof INCIDENT_FIELDS)[number][0]
+export type CaseDetails = Partial<Record<DetailKey, string>>
 
 export const ATTRIBUTE_KEYS = [
   'gender',
@@ -138,6 +158,7 @@ export const AUDIT_ACTIONS = [
   'case_create',
   'case_list',
   'case_open',
+  'case_update',
   'image_view',
   'generate',
   'refine',

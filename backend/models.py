@@ -49,6 +49,8 @@ class Case(SQLModel, table=True):
     title: str
     created_by: int = Field(foreign_key="user.id")
     status: str = "open"
+    # person and incident facts for the case sheet (backend/cases/details.py)
+    details: dict | None = Field(default=None, sa_column=Column(JSON, nullable=True))
     created_at: datetime = ts_field()
 
 

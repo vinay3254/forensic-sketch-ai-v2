@@ -44,6 +44,12 @@ EXTRAS = [
         "What, if anything, stood out to you about the person's face?",
         optional=True,
     ),
+    # about the person rather than the face: they fill the case details, not the sketch
+    _q("height", "Height", "What can you tell me about the person's height, if you remember?", optional=True),
+    _q("build", "Build", "Describe the person's body and build, if you remember it.", optional=True),
+    _q("clothing", "Clothing", "Describe the clothes the person was wearing, if you remember them.", optional=True),
+    _q("movement", "Movement", "Describe how the person moved and walked, if you remember.", optional=True),
+    _q("voice", "Voice and speech", "If the person spoke, describe their voice and the way they spoke.", optional=True),
 ]
 
 

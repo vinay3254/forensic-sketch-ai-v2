@@ -7,6 +7,7 @@ from sqlmodel import Session, select
 
 from backend.audit.logger import record
 from backend.auth.deps import current_user, require_case_access
+from backend.cases.details import CaseDetails
 from backend.db import get_session
 from backend.errors import AppError
 from backend.models import Case, ChatMessage, FaceVersion, User
@@ -27,6 +28,11 @@ class CaseOut(BaseModel):
     status: str
     created_at: datetime
     created_by: int
+    details: dict = {}
+
+    @classmethod
+    def of(cls, c: Case) -> "CaseOut":
+        return cls(**c.model_dump(exclude={"details"}), details=c.details or {})
 
 
 class VersionOut(BaseModel):
@@ -92,7 +98,7 @@ def create_case(
         raise AppError("CONFLICT", "Could not allocate a case number. Try again.", 409)
     session.refresh(case)
     record(session, request, "case_create", user, case_id=case.id)
-    return CaseOut(**case.model_dump())
+    return CaseOut.of(case)
 
 
 @router.get("", response_model=list[CaseOut])
@@ -100,7 +106,7 @@ def list_cases(request: Request, user: User = Depends(current_user), session: Se
     q = select(Case).order_by(Case.id.desc())
     if user.role != "admin":
         q = q.where(Case.created_by == user.id)
-    cases = [CaseOut(**c.model_dump()) for c in session.exec(q).all()]
+    cases = [CaseOut.of(c) for c in session.exec(q).all()]
     record(session, request, "case_list", user)
     return cases
 
@@ -117,9 +123,26 @@ def get_case(
     ).all()
     chat = session.exec(select(ChatMessage).where(ChatMessage.case_id == case.id).order_by(ChatMessage.id)).all()
     out = {
-        "case": CaseOut(**case.model_dump()),
+        "case": CaseOut.of(case),
         "versions": [VersionOut.of(v) for v in versions],
         "chat": [ChatOut(**m.model_dump()) for m in chat],
     }
     record(session, request, "case_open", user, case_id=case.id)
     return out
+
+
+@router.put("/{case_id}/details", response_model=CaseDetails)
+def put_details(
+    body: CaseDetails,
+    request: Request,
+    case: Case = Depends(require_case_access),
+    user: User = Depends(current_user),
+    session: Session = Depends(get_session),
+):
+    old, new = case.details or {}, body.stored()
+    case.details = new
+    session.add(case)
+    session.commit()
+    changed = sorted(k for k in old.keys() | new.keys() if old.get(k) != new.get(k))
+    record(session, request, "case_update", user, case_id=case.id, detail={"keys": changed})
+    return CaseDetails(**new)

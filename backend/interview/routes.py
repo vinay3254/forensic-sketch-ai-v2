@@ -8,6 +8,7 @@ from sqlmodel import Session, select
 from backend.ai.client import AIClient, get_ai_client
 from backend.audit.logger import record
 from backend.auth.deps import current_user, require_case_access
+from backend.cases.details import prefill_from_interview
 from backend.cases.routes import VersionOut
 from backend.db import get_session
 from backend.errors import AppError
@@ -212,4 +213,11 @@ def generate_from_interview(
         session, request, "generate", user, case_id=case.id, version_id=v.id,
         detail={"outcome": "ok", "interview_id": iv.id},
     )
+    details = prefill_from_interview(case.details or {}, iv.answers)
+    if details != (case.details or {}):
+        changed = sorted(k for k in details if details[k] != (case.details or {}).get(k))
+        case.details = details
+        session.add(case)
+        session.commit()
+        record(session, request, "case_update", user, case_id=case.id, detail={"keys": changed, "interview_id": iv.id})
     return VersionOut.of(v)

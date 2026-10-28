@@ -4,6 +4,7 @@ import type {
   AuditVerify,
   Case,
   CaseDetail,
+  CaseDetails,
   Interview,
   InterviewDraft,
   QuestionBank,
@@ -65,6 +66,9 @@ export const revert = (caseId: number, versionId: number) =>
 
 export const makePhoto = (caseId: number, versionId: number) =>
   post<Version>(`/api/cases/${caseId}/versions/${versionId}/photo`)
+
+export const saveDetails = (caseId: number, details: CaseDetails) =>
+  request<CaseDetails>(`/api/cases/${caseId}/details`, { method: 'PUT', body: JSON.stringify(details) })
 
 export const listVariants = (caseId: number) => request<Variant[]>(`/api/cases/${caseId}/variants`)
 export const makeVariant = (caseId: number, versionId: number, kind: VariantKind) =>
