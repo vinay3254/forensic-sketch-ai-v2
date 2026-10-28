@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
+from backend.audit.routes import router as audit_router
 from backend.auth.ratelimit import LoginLimiter
 from backend.auth.routes import router as auth_router
 from backend.config import Settings, get_settings
@@ -34,6 +35,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     register_error_handlers(app)
     app.include_router(auth_router)
+    app.include_router(audit_router)
 
     @app.get("/health")
     def health():
