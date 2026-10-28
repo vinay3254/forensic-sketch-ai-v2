@@ -12,6 +12,7 @@ from backend.auth.routes import router as auth_router
 from backend.cases.routes import router as cases_router
 from backend.config import Settings, get_settings
 from backend.db import init_db, make_engine
+from backend.face.routes import router as face_router
 from backend.errors import register_error_handlers
 
 
@@ -41,6 +42,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(auth_router)
     app.include_router(audit_router)
     app.include_router(cases_router)
+    app.include_router(face_router)
 
     @app.get("/health")
     def health():
