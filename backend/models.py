@@ -190,3 +190,33 @@ class Interview(SQLModel, table=True):
     confirmed_by: int | None = Field(default=None, foreign_key="user.id")
     confirmed_at: datetime | None = Field(default=None, sa_column=Column(UTCDateTime(), nullable=True))
     transcript_hash: str | None = None
+
+
+class RecordPerson(SQLModel, table=True):
+    """Demo criminal-records database: a fictional person with a synthetic face (FLUXSynID).
+    Nothing here describes a real person; see backend/records/seed.py."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    record_no: str = Field(unique=True)
+    name: str = Field(index=True)
+    alias: str | None = None
+    gender: str  # "male" | "female"
+    age: int
+    area: str
+    height_cm: int
+    build: str
+    marks: str | None = None
+    photo_path: str  # relative to storage_dir: the ID-style front photo
+    live_photo_path: str | None = None  # a second photo of the same synthetic person (for matching tests)
+    source: str  # e.g. "FLUXSynID 00000bb0d1b9_f"
+
+
+class RecordCharge(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    person_id: int = Field(foreign_key="recordperson.id", index=True)
+    fir_no: str
+    police_station: str
+    date: str  # ISO date of the FIR
+    section: str  # BNS section, e.g. "303(2)"
+    offence: str
+    status: str  # "under_investigation" | "charge_sheeted" | "convicted" | "acquitted"

@@ -258,6 +258,8 @@ export const AUDIT_ACTIONS = [
   'interview_start',
   'interview_assist',
   'translate',
+  'record_search',
+  'record_view',
   'interview_confirm',
   'audit_view',
   'access_denied',
@@ -340,3 +342,61 @@ export const SPEECH_LANGS = [
 ] as const
 export const isEnglish = (code: string | null | undefined) => !code || code.startsWith('en-')
 export const langName = (code: string) => SPEECH_LANGS.find((l) => l.code === code)?.label.split(' · ').at(-1) ?? code
+
+// demo criminal-records database (backend/records): fictional people, synthetic faces
+export type ChargeStatus = 'under_investigation' | 'charge_sheeted' | 'convicted' | 'acquitted'
+export const CHARGE_STATUS: Record<ChargeStatus, string> = {
+  under_investigation: 'Under investigation',
+  charge_sheeted: 'Charge-sheeted',
+  convicted: 'Convicted',
+  acquitted: 'Acquitted',
+}
+
+export interface RecordCounts {
+  cases: number
+  convicted: number
+  acquitted: number
+  pending: number
+}
+
+export interface RecordSummary extends RecordCounts {
+  id: number
+  record_no: string
+  name: string
+  alias: string | null
+  gender: string
+  age: number
+  area: string
+  marks: string | null
+  photo_url: string
+  latest_offence: string | null
+  latest_date: string | null
+}
+
+export interface RecordSearch {
+  demo: boolean
+  notice: string
+  total: number
+  items: RecordSummary[]
+  summary: RecordCounts & { people: number }
+  areas: string[]
+}
+
+export interface RecordCharge {
+  id: number
+  fir_no: string
+  police_station: string
+  date: string
+  section: string
+  offence: string
+  status: ChargeStatus
+}
+
+export interface RecordDetail extends RecordSummary {
+  demo: boolean
+  notice: string
+  height_cm: number
+  build: string
+  source: string
+  charges: RecordCharge[]
+}

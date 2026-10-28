@@ -99,6 +99,17 @@ The image prompt asks for a rough, hand-drawn composite (loose outlines, hatchin
 
 **Ethnic appearance** (`Attributes.appearance`, 2026-10-28): the witness's own words ("South Indian, Telugu-looking"), asked as a neutral interview question after age/gender, listed second in the image prompt and carried into the photo prompt. The extractor is told never to infer it from skin colour. Without it the model drew a generic European face for an Indian description (case 9 vs case 10). A photocopy-style post-process ("scanned" finish) was tried and dropped in favour of the plain model output.
 
+## Demo criminal-records database (2026-10-29)
+
+`/records` (sidebar "Records", Ctrl+K "Criminal records"): searchable people with mugshot, alias, area, marks and charge history (FIR no., police station, date, BNS section, offence, status: under investigation / charge-sheeted / convicted / acquitted). **Everything is fictional and labelled so on every page**: faces are synthetic FLUXSynID identities (Zenodo 15172770, CC BY-NC 4.0, so non-commercial; replace with our own generated faces before any commercial use), names/aliases/marks/cases come from `backend/records/seed.py`. Bengaluru areas and police stations are real place names only. Search matches name, alias, record no., marks, area, offence, BNS section and FIR no.; filters by status and station. Every search (`record_search`, with the query and result count) and every record opened (`record_view`) is audited. Faces live in `storage/records/` (gitignored, never committed):
+
+```bash
+uv run --with remotezip python -m scripts.fetch_record_faces 120   # ~1 h: Zenodo rate-limits; resumable
+uv run python -m scripts.seed_records                              # idempotent
+```
+
+The fetch reads single files out of the 11.7 GB zip with HTTP range requests (South Asian adults only, ID-style photo + one live photo each); the live photo is kept for testing suspect matching later.
+
 ## Voice input in Indian languages (2026-10-29)
 
 Record/Stop (browser Web Speech API, Chrome/Edge) on every interview answer and on the Sketch page's description box, in English, Hindi, Kannada, Telugu, Tamil, Malayalam, Marathi, Bengali and Gujarati (`backend/translate.py:LANGUAGES`, mirrored in `types.ts:SPEECH_LANGS`). The witness's words are stored verbatim in their language; an English translation (chat model, `TRANSLATE_SYSTEM_PROMPT`: literal, keeps doubt words) is stored beside them, shown to the officer and on the review, and is what the attribute extractor reads. Interview answers carry `lang`/`english` and `Interview.free_recall_lang/_english` only for non-English words, so English transcripts hash exactly as before; the hash covers the translation. Confirming with untranslated words is 422 `TRANSLATION_MISSING`. Translation runs automatically when recording stops, or with the Translate button; changing the words clears it. A typed/spoken description on the Sketch page is translated before generating (`GenerateIn.lang`); the version keeps "original\n(Language) → English". Every translation is audited as `translate`. Live: ~5-20 s per answer. The language spoken is never used as ethnic appearance.

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { CornerDownLeft, FileText, Home, MessagesSquare, PenLine, PersonStanding, Plus, Search, Shirt, ShieldCheck, UserRound } from 'lucide-react'
+import { CornerDownLeft, FileText, FolderSearch, Home, MessagesSquare, PenLine, PersonStanding, Plus, Search, Shirt, ShieldCheck, UserRound } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { listCases } from '../api'
@@ -52,6 +52,7 @@ export default function CommandPalette({ admin, caseId }: { admin: boolean; case
     const all: Item[] = [
       { group: 'Go to', label: 'Home', icon: <Home size={15} />, to: '/cases' },
       { group: 'Go to', label: 'New case', hint: 'describe a face', icon: <Plus size={15} />, to: '/cases?new=1' },
+      { group: 'Go to', label: 'Criminal records', icon: <FolderSearch size={15} />, to: '/records' },
       ...(admin ? [{ group: 'Go to', label: 'Audit log', icon: <ShieldCheck size={15} />, to: '/audit' }] : []),
     ]
     const current = cases.data?.find((c) => c.id === caseId)

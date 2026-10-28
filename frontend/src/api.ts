@@ -15,6 +15,8 @@ import type {
   InterviewDraft,
   Proportions,
   QuestionBank,
+  RecordDetail,
+  RecordSearch,
   StyleCategory,
   FigureParams,
   FigureState,
@@ -192,3 +194,9 @@ export const assistInterview = (caseId: number, id: number) =>
   post<{ covered: Record<string, string[]> }>(`/api/cases/${caseId}/interviews/${id}/assist`)
 export const generateFromInterview = (caseId: number, id: number) =>
   post<Version>(`/api/cases/${caseId}/interviews/${id}/generate`)
+
+export const searchRecords = (f: { q?: string; status?: string; area?: string }) => {
+  const p = new URLSearchParams(Object.entries(f).filter(([, v]) => v) as [string, string][])
+  return request<RecordSearch>(`/api/records?${p}`)
+}
+export const getRecord = (id: number) => request<RecordDetail>(`/api/records/${id}`)

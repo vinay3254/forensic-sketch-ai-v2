@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Home, LogOut, PenLine, Search, ShieldCheck } from 'lucide-react'
+import { FolderSearch, Home, LogOut, PenLine, Search, ShieldCheck } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useMatch, useNavigate } from 'react-router-dom'
 import { listCases, logout, me } from './api'
@@ -10,6 +10,8 @@ import Splash from './components/Splash'
 import TraceMark from './components/TraceMark'
 import { recentCases, RECENT_EVENT, rememberVisit } from './lib/recent'
 import AuditPage from './pages/AuditPage'
+import RecordPage from './pages/RecordPage'
+import RecordsPage from './pages/RecordsPage'
 import CasesPage from './pages/CasesPage'
 import CaseSheetPage from './pages/CaseSheetPage'
 import DetailsPage from './pages/DetailsPage'
@@ -117,6 +119,9 @@ function Shell({ user, children }: { user: User; children: ReactNode }) {
               <Search size={16} /> Jump to…
               <kbd className="ml-auto rounded border border-line px-1 font-mono text-[10px] text-faint">Ctrl K</kbd>
             </button>
+            <NavLink to="/records" className={navItem}>
+              <FolderSearch size={16} /> Records
+            </NavLink>
             {user.role === 'admin' && (
               <NavLink to="/audit" className={navItem}>
                 <ShieldCheck size={16} /> Audit log
@@ -227,6 +232,22 @@ export default function App() {
         element={
           <Guard>
             <InterviewPage />
+          </Guard>
+        }
+      />
+      <Route
+        path="/records"
+        element={
+          <Guard>
+            <RecordsPage />
+          </Guard>
+        }
+      />
+      <Route
+        path="/records/:rid"
+        element={
+          <Guard>
+            <RecordPage />
           </Guard>
         }
       />
