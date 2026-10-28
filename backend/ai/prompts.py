@@ -81,6 +81,16 @@ def build_image_prompt(a: Attributes, description: str | None = None) -> str:
     return " ".join(lines)
 
 
+def build_style_prompt(category: str, change: str) -> str:
+    """One style from the library (or typed by the officer) put on the existing sketch."""
+    return (
+        f"Edit this black and white pencil sketch. Change only the {category.lower()}: the person is now "
+        f"{scrub(change.strip())}. Keep the same person, identity, face, expression, pose, framing, rough "
+        "hand-drawn pencil line style and plain background exactly the same, and change nothing else. "
+        "Black and white only."
+    )
+
+
 def build_edit_prompt(edits: list[Edit]) -> str:
     changes = "; ".join(f"{e.region.replace('_', ' ')}: {e.change}" for e in edits)
     return (

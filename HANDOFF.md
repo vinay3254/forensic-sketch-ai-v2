@@ -97,6 +97,12 @@ Done. Refines keep the change inside the edited regions and paste the previous s
 
 The image prompt asks for a rough, hand-drawn composite of an ordinary face (loose outlines, hatching, hair as shaded shapes, not idealised), and edits keep that line style. A photocopy-style post-process ("scanned" finish) was tried and dropped in favour of the plain model output.
 
+## Style library (2026-10-28)
+
+- **Styles** tab on every case (Alt+4; case sheet is now Alt+5): 52 looks in 6 categories (clothing, hair, facial hair, headwear, eyewear, accessories) from `backend/styles/catalog.py`, plus "describe your own". A click is one image edit of the latest sketch, saved as a new version (`instruction` "Style: …", chat + `style_apply` audit), kept inside the matching face-parser region (new `clothing` region = BiSeNet class 16; accessories have per-style regions). Hair and facial-hair styles replace that attribute.
+- Thumbnails are faceless pencil mannequins in `backend/assets/styles/`, drawn by `scripts/make_style_thumbs.py` (skips existing files; about 2 min each). Missing ones show a placeholder icon.
+- Live check: Hoodie on the woman's sketch, face unchanged, `localized` true.
+
 ## Next (agreed, not started)
 
 1. **Suspect matching (CPU)**: InsightFace `buffalo_l` via ONNX Runtime (like the face parser), admin-managed face set stored in SQLite (512-d embeddings, plain cosine search), search from a version's realistic photo, top-5 "possible leads" with scores and a cut-off ("no strong match" below it), every search audited. Needs a short design first. Demo face set only (CUFS under its research licence, or AI-generated faces); `buffalo_l` weights are non-commercial.

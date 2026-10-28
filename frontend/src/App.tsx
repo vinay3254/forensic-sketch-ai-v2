@@ -14,6 +14,7 @@ import DetailsPage from './pages/DetailsPage'
 import InterviewPage from './pages/InterviewPage'
 import InterviewRedirect from './pages/InterviewRedirect'
 import LoginPage from './pages/LoginPage'
+import StylesPage from './pages/StylesPage'
 import WorkspacePage from './pages/WorkspacePage'
 import type { User } from './types'
 
@@ -184,6 +185,14 @@ export default function App() {
         element={
           <Guard>
             <DetailsPage />
+          </Guard>
+        }
+      />
+      <Route
+        path="/cases/:id/styles"
+        element={
+          <Guard>
+            <StylesPage />
           </Guard>
         }
       />

@@ -132,6 +132,18 @@ export interface Health {
   head3d: 'on' | 'off'
 }
 
+export interface StyleItem {
+  key: string
+  label: string
+  image_url: string | null
+}
+
+export interface StyleCategory {
+  key: string
+  label: string
+  styles: StyleItem[]
+}
+
 export interface CaseDetail {
   case: Case
   versions: Version[]
@@ -194,6 +206,7 @@ export const AUDIT_ACTIONS = [
   'export',
   'make_photo',
   'variant_create',
+  'style_apply',
   'body_create',
   'head_create',
   'angle_view_create',

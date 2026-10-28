@@ -12,6 +12,7 @@ import type {
   Interview,
   InterviewDraft,
   QuestionBank,
+  StyleCategory,
   RefineResult,
   User,
   Variant,
@@ -87,6 +88,10 @@ export const listBodyTypes = () => request<BodyType[]>('/api/body-types')
 export const health = () => request<Health>('/health')
 export const listHeads = (caseId: number) => request<Head3D[]>(`/api/cases/${caseId}/heads`)
 export const makeHead = (caseId: number, versionId: number) => post<Head3D>(`/api/cases/${caseId}/versions/${versionId}/head`)
+
+export const listStyles = () => request<StyleCategory[]>('/api/styles')
+export const applyStyle = (caseId: number, body: { style: string } | { category: string; text: string }) =>
+  post<RefineResult>(`/api/cases/${caseId}/style`, body)
 
 export const listVariants = (caseId: number) => request<Variant[]>(`/api/cases/${caseId}/variants`)
 export const makeVariant = (caseId: number, versionId: number, kind: VariantKind) =>

@@ -15,8 +15,8 @@ from PIL import Image, ImageFilter
 log = logging.getLogger(__name__)
 
 PARSE_SIZE = 512
-SKIN, L_BROW, R_BROW, GLASSES, L_EAR, R_EAR, EARRING, NOSE, MOUTH, U_LIP, L_LIP, HAIR, HAT = (
-    1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 17, 18,
+SKIN, L_BROW, R_BROW, GLASSES, L_EAR, R_EAR, EARRING, NOSE, MOUTH, U_LIP, L_LIP, CLOTH, HAIR, HAT = (
+    1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 16, 17, 18,
 )
 BROWS = (L_BROW, R_BROW)
 # edit regions without an entry here (jaw, face_shape, marks, ...) change the whole face
@@ -27,6 +27,7 @@ REGION_CLASSES = {
     "ears": (L_EAR, R_EAR, EARRING),
     "hair": (HAIR, HAT),
     "accessories": (GLASSES,),
+    "clothing": (CLOTH,),
     "eyes": (),  # the parser misses narrow eyes; a box between brows and nose is used instead
     "facial_hair": (),  # no beard class; a box over the lower face is used instead
 }

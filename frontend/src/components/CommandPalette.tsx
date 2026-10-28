@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { CornerDownLeft, FileText, Home, MessagesSquare, PenLine, Plus, Search, ShieldCheck, UserRound } from 'lucide-react'
+import { CornerDownLeft, FileText, Home, MessagesSquare, PenLine, Plus, Search, Shirt, ShieldCheck, UserRound } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { listCases } from '../api'
@@ -17,7 +17,7 @@ interface Item {
   to: string
 }
 
-const PAGE_ICON = { sketch: <PenLine size={15} />, details: <UserRound size={15} />, interview: <MessagesSquare size={15} />, sheet: <FileText size={15} /> }
+const PAGE_ICON = { sketch: <PenLine size={15} />, details: <UserRound size={15} />, interview: <MessagesSquare size={15} />, styles: <Shirt size={15} />, sheet: <FileText size={15} /> }
 
 // ⌘K / Ctrl+K: jump to any case, or straight to one of its pages
 export default function CommandPalette({ admin, caseId }: { admin: boolean; caseId: number | null }) {
