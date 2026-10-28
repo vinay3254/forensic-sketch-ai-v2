@@ -53,7 +53,8 @@ Sketches can be generated from a confirmed interview ("Confirm & generate sketch
 
 ## Known issues
 
-- Left/right from the witness's point of view is not pinned down: "small mole above the left lip" was drawn on the viewer's left (the person's right). Witnesses usually mean the person's own left; the image prompt should say so.
+- Left/right: the first-sketch prompt now says left/right mean the person's own side (a mole "above the left lip" had been drawn on the viewer's left). Not yet re-checked live.
+- A text description never pins down one face: the same words fit many people, so the first sketch is a starting point to refine with the witness. The first-sketch prompt lists features by name, includes the typed description verbatim (crime words replaced; interview words are not passed, so "don't know" stays blank) and asks for a natural, not idealised face.
 - Refined attribute text repeats itself (e.g. `"light stubble, thin moustache with light stubble"`): `apply_edits` appends the change to the old value instead of replacing it.
 - Edits to unmapped regions (jaw, face shape, facial hair, marks) still redraw the whole sketch, so they can change more than asked.
 - Each thumbnail load writes an `image_view` audit row, so the log fills quickly.

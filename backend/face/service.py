@@ -123,7 +123,8 @@ def generate_face(
         uncertain = fields_with_status(iv, "uncertain")
     else:
         attrs = ai.extract_attributes(description)
-    prompt = build_image_prompt(attrs)
+    # typed words go to the image model too; interview words do not, so "don't know" stays blank
+    prompt = build_image_prompt(attrs, None if interview is not None else description)
     image = normalize_image(ai.generate_image(prompt), settings.llm_image_size)
     version_no, parent_id = _new_version_no(session, case.id)
     version = FaceVersion(

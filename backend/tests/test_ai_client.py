@@ -12,7 +12,7 @@ from backend.errors import AppError
 
 def test_image_prompt_skips_nulls_and_has_no_crime_words():
     p = build_image_prompt(Attributes(gender="male", age_range="30-35", nose="broad"))
-    assert "30-35 male" in p and "broad nose" in p and "None" not in p
+    assert "Age: 30-35." in p and "Gender: male." in p and "Nose: broad." in p and "None" not in p
     for w in ("suspect", "criminal", "mugshot"):
         assert w not in p.lower()
 

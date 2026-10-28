@@ -1,4 +1,5 @@
 import json
+import re
 
 from backend.ai.schemas import Attributes, Coverage, Edit, EditPlan
 from backend.cases.details import CaseDetails
@@ -38,34 +39,46 @@ def build_coverage_request(free_recall: str, features: dict[str, str]) -> str:
     return f"Features:\n{keys}\n\nWitness's free account:\n{free_recall}"
 
 
-def build_image_prompt(a: Attributes) -> str:
-    who = " ".join(x for x in [a.age_range, a.gender or "person"] if x)
-    parts = [f"Quick hand-drawn composite pencil sketch of a {who}, front view"]
-    features = [
-        f"{a.skin_tone} skin" if a.skin_tone else None,
-        f"{a.face_shape} face" if a.face_shape else None,
-        f"{a.jaw} jaw" if a.jaw else None,
-        f"{a.eyes} eyes" if a.eyes else None,
-        f"{a.eyebrows} eyebrows" if a.eyebrows else None,
-        f"{a.nose} nose" if a.nose else None,
-        a.mouth,
-        f"{a.ears} ears" if a.ears else None,
-        a.hair,
-        a.facial_hair,
-        a.marks,
-        a.accessories,
-    ]
-    features = [f for f in features if f]
+FEATURE_LABELS = [
+    ("gender", "Gender"), ("age_range", "Age"), ("skin_tone", "Skin"), ("face_shape", "Face shape"), ("jaw", "Jaw"),
+    ("eyes", "Eyes"), ("eyebrows", "Eyebrows"), ("nose", "Nose"), ("mouth", "Mouth"), ("ears", "Ears"),
+    ("hair", "Hair"), ("facial_hair", "Facial hair"), ("marks", "Marks"), ("accessories", "Accessories"),
+    ("notes", "Other details"),
+]
+
+# witness wording can name the incident; image prompts must not, so these become neutral words
+_CRIME_WORDS = re.compile(
+    r"\b(suspects?|criminals?|mugshots?|thie(?:f|ves)|robbers?|burglars?|attackers?|assailants?|offenders?|"
+    r"culprits?|murderers?|killers?|kidnappers?|accused|perpetrators?|police)\b",
+    re.I,
+)
+
+
+def scrub(text: str) -> str:
+    return _CRIME_WORDS.sub("person", text)
+
+
+def build_image_prompt(a: Attributes, description: str | None = None) -> str:
+    """The first sketch: every described feature by name, plus the witness's own words when typed in
+    directly (an interview passes none, so "don't know" features stay blank)."""
+    lines = ["Quick hand-drawn composite pencil sketch of one person's face, front view, drawn from a witness description."]
+    features = [f"{label}: {getattr(a, key)}." for key, label in FEATURE_LABELS if getattr(a, key)]
     if features:
-        parts[0] += " with " + ", ".join(features)
-    parts.append(
+        lines.append(" ".join(features))
+    if description and description.strip():
+        lines.append(f'The witness described the face as: "{scrub(description.strip())}"')
+    lines.append(
+        "Left and right always mean the person's own left and right, not the viewer's: the person's own left "
+        "cheek appears on the right side of the drawing."
+    )
+    lines.append(
         "Drawn by hand by a forensic artist in about twenty minutes, in soft pencil on plain off-white paper: "
         "loose dark outlines, rough hatching for shadows, hair drawn as simple shaded shapes rather than single "
-        "strands, no skin texture, not photorealistic, slight natural asymmetry. An ordinary, average-looking "
-        "face, not idealised and not a model. Black and white only, no colour. Neutral expression, looking "
-        "straight ahead, head and shoulders, plain shirt collar, plain background."
+        "strands, no skin texture, not photorealistic, slight natural asymmetry. A realistic, natural face that "
+        "follows the description closely; not idealised, not glamorised and not a model. Black and white only, "
+        "no colour. Neutral expression, looking straight ahead, head and shoulders, plain shirt collar, plain background."
     )
-    return ". ".join(parts)
+    return " ".join(lines)
 
 
 def build_edit_prompt(edits: list[Edit]) -> str:
