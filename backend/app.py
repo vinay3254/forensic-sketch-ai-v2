@@ -14,6 +14,7 @@ from backend.config import Settings, get_settings
 from backend.db import init_db, make_engine
 from backend.export.routes import router as export_router
 from backend.face.routes import router as face_router
+from backend.interview.routes import router as interview_router
 from backend.errors import register_error_handlers
 
 
@@ -45,6 +46,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(cases_router)
     app.include_router(face_router)
     app.include_router(export_router)
+    app.include_router(interview_router)
 
     @app.get("/health")
     def health():
