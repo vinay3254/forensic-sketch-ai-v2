@@ -46,6 +46,16 @@ Then run the smoke test, which calls each AI operation once and prints timings:
 uv run python -m scripts.smoke_live
 ```
 
+### Localized edits (optional)
+
+AI image edits redraw the whole sketch. With the face-parsing model installed, each refine keeps the change only inside the regions the witness asked about (nose, mouth, eyes, eyebrows, ears, hair, glasses) and pastes the previous sketch back everywhere else. Edits to the jaw, face shape, facial hair or marks keep the full redraw. One-time setup (downloads PyTorch only for the export, about 1–2 minutes):
+
+```bash
+uv run --with torch --with torchvision --with onnx python -m scripts.fetch_face_parser
+```
+
+This writes `storage/models/face_parser.onnx`; restart the backend. Set `EDIT_LOCALIZE=0` to turn it off. Model code: [zllrunning/face-parsing.PyTorch](https://github.com/zllrunning/face-parsing.PyTorch) (MIT). The weights were trained on CelebAMask-HQ, which is licensed for non-commercial research use only.
+
 ### Tests
 
 ```bash

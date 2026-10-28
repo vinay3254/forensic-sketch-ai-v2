@@ -109,3 +109,18 @@ def test_conflicting_refine_attempt_is_audited(client, case_id, login):
     login(client, "admin", "adminpass")
     rows = client.get(f"/api/audit?action=refine&case_id={case_id}").json()["items"]
     assert rows[0]["detail"]["outcome"] == "CONFLICT"
+
+
+def test_refine_localizes_with_face_parser(app, client, case_id):
+    from backend.tests.test_regions import FakeParser, face_map
+
+    client.post(f"/api/cases/{case_id}/generate", json={"description": "male"})
+    app.state.face_parser = FakeParser(face_map())
+    v = client.post(f"/api/cases/{case_id}/refine", json={"message": "bigger nose"}).json()["version"]
+    assert v["localized"] is True
+
+
+def test_refine_without_face_parser_is_not_localized(client, case_id):
+    client.post(f"/api/cases/{case_id}/generate", json={"description": "male"})
+    v = client.post(f"/api/cases/{case_id}/refine", json={"message": "bigger nose"}).json()["version"]
+    assert v["localized"] is False

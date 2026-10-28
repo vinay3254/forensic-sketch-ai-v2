@@ -12,6 +12,7 @@ from backend.ai.client import AIClient
 from backend.ai.prompts import apply_edits, build_edit_prompt, build_image_prompt, build_photo_prompt
 from backend.ai.schemas import Attributes
 from backend.config import Settings
+from backend.face.regions import Parser, localize
 from backend.errors import AppError
 from backend.interview.transcript import fields_with_status, render_description
 from backend.models import Case, ChatMessage, FaceVersion, Interview, User
@@ -162,7 +163,13 @@ def generate_face(
 
 
 def refine_face(
-    session: Session, ai: AIClient, settings: Settings, case: Case, user: User, message: str
+    session: Session,
+    ai: AIClient,
+    settings: Settings,
+    case: Case,
+    user: User,
+    message: str,
+    parser: Parser | None = None,
 ) -> tuple[FaceVersion | None, str]:
     current = latest_version(session, case.id)
     if current is None:
@@ -175,8 +182,9 @@ def refine_face(
         return None, plan.reply
     attrs = apply_edits(Attributes(**current.attributes), plan.edits)
     prompt = build_edit_prompt(plan.edits)
-    image = ai.edit_image(existing_image_file(settings, current.image_path).read_bytes(), prompt)
-    image = finish_sketch(settings, normalize_image(image, settings.llm_image_size))
+    before = existing_image_file(settings, current.image_path).read_bytes()
+    image = finish_sketch(settings, normalize_image(ai.edit_image(before, prompt), settings.llm_image_size))
+    localized = localize(parser, before, image, [e.region for e in plan.edits])
     version = FaceVersion(
         case_id=case.id,
         parent_id=current.id,
@@ -187,7 +195,8 @@ def refine_face(
         uncertain=[f for f in current.uncertain or [] if f not in {e.region for e in plan.edits}] or None,
         attributes=attrs.model_dump(),
         prompt=prompt,
-        image_path=save_image(settings, case.id, current.version_no + 1, image),
+        image_path=save_image(settings, case.id, current.version_no + 1, localized or image),
+        localized=localized is not None,
         created_by=user.id,
     )
     return _commit_version(session, settings, version, [("user", message), ("assistant", plan.reply)]), plan.reply

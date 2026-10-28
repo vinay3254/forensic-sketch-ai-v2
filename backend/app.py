@@ -13,9 +13,17 @@ from backend.cases.routes import router as cases_router
 from backend.config import Settings, get_settings
 from backend.db import init_db, make_engine
 from backend.export.routes import router as export_router
+from backend.face.regions import FaceParser
 from backend.face.routes import router as face_router
 from backend.interview.routes import router as interview_router
 from backend.errors import register_error_handlers
+
+
+def make_face_parser(settings: Settings) -> FaceParser | None:
+    path = settings.storage_dir / "models" / "face_parser.onnx"
+    if settings.ai_mock or not settings.edit_localize or not path.is_file():
+        return None
+    return FaceParser(path)
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -32,6 +40,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.engine = make_engine(settings.database_url)
     app.state.login_limiter = LoginLimiter()
     app.state.ai_client = MockAIClient() if settings.ai_mock else LiveAIClient(settings)
+    app.state.face_parser = make_face_parser(settings)
 
     app.add_middleware(
         CORSMiddleware,

@@ -60,7 +60,9 @@ def refine(
     ai: AIClient = Depends(get_ai_client),
 ):
     try:
-        v, reply = service.refine_face(session, ai, request.app.state.settings, case, user, body.message)
+        v, reply = service.refine_face(
+            session, ai, request.app.state.settings, case, user, body.message, request.app.state.face_parser
+        )
     except AppError as e:
         record(session, request, "refine", user, case_id=case.id, detail={"message": body.message, "outcome": e.code})
         raise

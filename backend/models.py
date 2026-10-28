@@ -68,6 +68,7 @@ class FaceVersion(SQLModel, table=True):
     interview_id: int | None = Field(default=None, foreign_key="interview.id")  # set when made from an interview
     # attribute names the witness was unsure about; carried through refines and reverts
     uncertain: list | None = Field(default=None, sa_column=Column(JSON, nullable=True))
+    localized: bool | None = None  # refine only: old sketch pasted back outside the edited regions
     created_by: int = Field(foreign_key="user.id")
     created_at: datetime = ts_field()
 

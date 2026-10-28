@@ -46,6 +46,7 @@ export interface Version {
   photo_url: string | null
   interview_id: number | null
   uncertain: string[]
+  localized: boolean
 }
 
 export interface ChatMsg {

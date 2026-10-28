@@ -41,11 +41,15 @@ Sketches can be generated from a confirmed interview ("Confirm & generate sketch
 ## Known issues
 
 - Refined attribute text repeats itself (e.g. `"light stubble, thin moustache with light stubble"`): `apply_edits` appends the change to the old value instead of replacing it.
-- Edits can change more than asked (e.g. a moustache edit also thinned the stubble).
+- Edits to unmapped regions (jaw, face shape, facial hair, marks) still redraw the whole sketch, so they can change more than asked.
 - Each thumbnail load writes an `image_view` audit row, so the log fills quickly.
 - The `revoked_token` table is never pruned.
 - No frontend unit tests; the frontend is checked with `npm run build` and in the browser.
 - A deleted tail of audit rows still verifies as intact; `/api/audit/verify` returns `head_hash` so an auditor can compare it with a noted value.
+
+## Localized edits
+
+Done. Refines keep the change inside the edited regions and paste the previous sketch back elsewhere (`face/regions.py`, spec `docs/superpowers/specs/2026-10-28-localized-edits-design.md`). Needs `storage/models/face_parser.onnx` from `scripts/fetch_face_parser.py`; without it refines behave as before. Live check: a nose edit changed only the nose. Jaw, face shape, facial hair and marks have no parser class and still redraw the whole sketch. This fixes the known issue "edits change more than asked" for the mapped regions.
 
 ## Sketch style trial (pick one, remove the other)
 

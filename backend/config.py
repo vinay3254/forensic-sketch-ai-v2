@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     llm_image_edit_model: str = ""  # text model that calls the tool; used only with "responses"
     # "clean" = image as the model drew it; "scanned" = grey paper tone and grain so it reads as a scanned drawing
     sketch_finish: Literal["clean", "scanned"] = "clean"
+    # paste the old sketch back outside the edited regions; needs storage/models/face_parser.onnx
+    # (scripts/fetch_face_parser.py), otherwise refines keep the raw edit
+    edit_localize: bool = True
     ai_mock: bool = False
 
 
