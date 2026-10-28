@@ -15,7 +15,7 @@ dependencies = [
     "scikit-image",
     "torch",
     "torchvision",
-    "transformers==4.35.0",
+    "transformers==5.10.1",
     "trimesh",
     "uvicorn",
 ]
