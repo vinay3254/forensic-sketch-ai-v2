@@ -1,1 +1,9 @@
 .superpowers/
+.env
+.venv/
+__pycache__/
+*.db
+storage/
+node_modules/
+dist/
+smoke_*.png

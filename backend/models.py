@@ -1,0 +1,70 @@
+from datetime import UTC, datetime
+
+from sqlalchemy import JSON, Column, DateTime, UniqueConstraint
+from sqlmodel import Field, SQLModel
+
+
+def utcnow() -> datetime:
+    return datetime.now(UTC)
+
+
+def ts_field() -> datetime:
+    return Field(default_factory=utcnow, sa_column=Column(DateTime(timezone=True), nullable=False))
+
+
+class User(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    username: str = Field(unique=True, index=True)
+    password_hash: str
+    role: str  # "officer" | "admin"
+    created_at: datetime = ts_field()
+
+
+class Case(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    case_number: str = Field(unique=True)
+    title: str
+    created_by: int = Field(foreign_key="user.id")
+    status: str = "open"
+    created_at: datetime = ts_field()
+
+
+class FaceVersion(SQLModel, table=True):
+    __table_args__ = (UniqueConstraint("case_id", "version_no"),)
+
+    id: int | None = Field(default=None, primary_key=True)
+    case_id: int = Field(foreign_key="case.id", index=True)
+    parent_id: int | None = Field(default=None, foreign_key="faceversion.id")
+    version_no: int
+    kind: str  # "generate" | "refine" | "revert"
+    instruction: str
+    attributes: dict = Field(default_factory=dict, sa_column=Column(JSON, nullable=False))
+    prompt: str
+    image_path: str
+    created_by: int = Field(foreign_key="user.id")
+    created_at: datetime = ts_field()
+
+
+class ChatMessage(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    case_id: int = Field(foreign_key="case.id", index=True)
+    role: str  # "user" | "assistant"
+    content: str
+    version_id: int | None = Field(default=None, foreign_key="faceversion.id")
+    created_at: datetime = ts_field()
+
+
+class AuditLog(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    ts: datetime = ts_field()
+    user_id: int | None = None
+    username: str | None = None
+    role: str | None = None
+    action: str = Field(index=True)
+    case_id: int | None = Field(default=None, index=True)
+    version_id: int | None = None
+    ip: str | None = None
+    user_agent: str | None = None
+    detail: dict = Field(default_factory=dict, sa_column=Column(JSON, nullable=False))
+    prev_hash: str
+    hash: str
