@@ -3,6 +3,8 @@ import type {
   AuditPage,
   AuditVerify,
   BodyFigure,
+  BodyModel,
+  BlenderJob,
   BodyType,
   Case,
   CaseDetail,
@@ -104,6 +106,25 @@ export const getBody = (caseId: number) =>
     throw e
   })
 export const drawBody = (caseId: number) => post<BodyFigure>(`/api/cases/${caseId}/body`)
+
+export const getBodyModel = (caseId: number) => request<BodyModel | null>(`/api/cases/${caseId}/figure/reconstruction`)
+export const reconstructBody = (caseId: number, bodyId: number) =>
+  post<BodyModel>(`/api/cases/${caseId}/figure/reconstruct`, { body_id: bodyId })
+export const openBodyModel = (caseId: number, modelId: number) =>
+  post<{ opened: boolean }>(`/api/cases/${caseId}/figure/reconstructions/${modelId}/blender`)
+
+export const getBlenderJob = (caseId: number) => request<BlenderJob | null>(`/api/cases/${caseId}/figure/blender-jobs/latest`)
+export const startBlenderJob = (caseId: number, bodyId: number, prompt: string) =>
+  post<BlenderJob>(`/api/cases/${caseId}/figure/blender-jobs`, { body_id: bodyId, prompt })
+
+export async function bodyModelMesh(url: string): Promise<ArrayBuffer> {
+  const response = await fetch(url, { credentials: 'include' })
+  if (!response.ok) {
+    const error = (await response.json().catch(() => null))?.error
+    throw new ApiError(error?.code ?? 'UNKNOWN', error?.message ?? 'Could not load reconstructed model.', response.status)
+  }
+  return response.arrayBuffer()
+}
 
 export const listBodyTypes = () => request<BodyType[]>('/api/body-types')
 

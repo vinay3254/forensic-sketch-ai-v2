@@ -113,6 +113,30 @@ export interface BodyFigure {
   created_at: string
 }
 
+export interface BodyModel {
+  id: number
+  body_id: number
+  mesh_url: string
+  source_url: string
+  height_cm: number
+  engine: string
+  created_at: string
+  blend_url: string | null
+  script_url: string | null
+  summary: string | null
+}
+
+export interface BlenderJob {
+  id: number
+  body_id: number
+  status: 'queued' | 'drafting' | 'building' | 'opening' | 'complete' | 'failed'
+  model_id: number | null
+  error: string | null
+  desktop_opened: boolean
+  desktop_error: string | null
+  created_at: string
+}
+
 export interface BodyType {
   key: string
   label: string

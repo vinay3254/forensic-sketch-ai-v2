@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, Column, DateTime, UniqueConstraint
+from sqlalchemy import JSON, Column, DateTime, UniqueConstraint, Index, text
 from sqlalchemy.types import TypeDecorator
 from sqlmodel import Field, SQLModel
 
@@ -97,6 +97,41 @@ class BodyFigure(SQLModel, table=True):
     case_id: int = Field(foreign_key="case.id", index=True)
     image_path: str
     prompt: str
+    created_by: int = Field(foreign_key="user.id")
+    created_at: datetime = ts_field()
+
+
+class BodyModel(SQLModel, table=True):
+    """Colored reconstruction of one saved full-body source image."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    case_id: int = Field(foreign_key="case.id", index=True)
+    body_id: int = Field(foreign_key="bodyfigure.id")
+    mesh_path: str
+    height_cm: float
+    engine: str = "TripoSR"
+    blend_path: str | None = None
+    script_path: str | None = None
+    summary: str | None = None
+    created_by: int = Field(foreign_key="user.id")
+    created_at: datetime = ts_field()
+
+
+class BlenderJob(SQLModel, table=True):
+    __table_args__ = (Index('unique_active_blender_case', 'case_id', unique=True,
+                           sqlite_where=text("status IN ('queued','drafting','building','opening')"),
+                           postgresql_where=text("status IN ('queued','drafting','building','opening')")),)
+    id: int | None = Field(default=None, primary_key=True)
+    case_id: int = Field(foreign_key="case.id", index=True)
+    body_id: int = Field(foreign_key="bodyfigure.id")
+    prompt: str
+    status: str = "queued"
+    worker_pid: int
+    worker_token: str | None = None
+    model_id: int | None = Field(default=None, foreign_key="bodymodel.id")
+    error: str | None = None
+    desktop_opened: bool = False
+    desktop_error: str | None = None
     created_by: int = Field(foreign_key="user.id")
     created_at: datetime = ts_field()
 

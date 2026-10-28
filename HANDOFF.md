@@ -99,6 +99,10 @@ The image prompt asks for a rough, hand-drawn composite (loose outlines, hatchin
 
 **Ethnic appearance** (`Attributes.appearance`, 2026-10-28): the witness's own words ("South Indian, Telugu-looking"), asked as a neutral interview question after age/gender, listed second in the image prompt and carried into the photo prompt. The extractor is told never to infer it from skin colour. Without it the model drew a generic European face for an Indian description (case 9 vs case 10). A photocopy-style post-process ("scanned" finish) was tried and dropped in favour of the plain model output.
 
+## Proportion sliders (2026-10-29)
+
+Words lose a face's proportions, so after the first sketch the witness reshapes it directly: eye size, eye spacing, nose length and width, mouth width, face length, jaw width (Sketch page, right panel, "Proportions" tab). `face/proportions.py` takes landmarks from the BiSeNet class map (eyes estimated under the brows, mouth estimated when the parser misses pencil lips) and applies smooth local scale/shift warps as one backward-mapped field: no AI call. Preview is a 512 px warp (~70 ms once landmarks are cached per image); Save makes a new version (`kind="adjust"`, attributes and uncertain fields carried over, audited as `proportion_adjust` with the slider values). Previews store nothing and are not audited separately (the image view that loaded the sketch is). Needs `storage/models/face_parser.onnx`, otherwise 503 `PROPORTIONS_OFF`.
+
 ## Style library (2026-10-28)
 
 - **Styles** tab on every case (Alt+4; case sheet is now Alt+5): 52 looks in 6 categories (clothing, hair, facial hair, headwear, eyewear, accessories) from `backend/styles/catalog.py`, plus "describe your own". A click is one image edit of the latest sketch, saved as a new version (`instruction` "Style: …", chat + `style_apply` audit), kept inside the matching face-parser region (new `clothing` region = BiSeNet class 16; accessories have per-style regions). Hair and facial-hair styles replace that attribute.
