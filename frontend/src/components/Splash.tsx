@@ -3,9 +3,11 @@ import { useEffect, useState } from 'react'
 // TRACE intro: brackets draw in, face fragments drop into a mosaic one by one (the blue eye
 // last), then the wordmark. Once per browser session; any click or key skips it.
 const SEEN = 'trace.splash.seen'
-const TILE_START = 0.55 // s
-const TILE_STEP = 0.32
-const TOTAL = 4.9
+const TILE_START = 0.15 // s
+const TILE_STEP = 0.09
+const TILE_TIME = 0.38
+const LETTER_STEP = 0.04
+const HOLD = 0.35 // the finished mark stays this long before fading
 
 // left/top/width/height inside a 300×460 frame, in drop-in order
 const TILES: { src: string; box: [number, number, number, number]; blue?: boolean }[] = [
@@ -18,6 +20,9 @@ const TILES: { src: string; box: [number, number, number, number]; blue?: boolea
   { src: 'texture', box: [158, 382, 132, 70] },
   { src: 'blue-eye', box: [158, 150, 132, 112], blue: true },
 ]
+
+const WORD_AT = TILE_START + (TILES.length - 1) * TILE_STEP + TILE_TIME * 0.6
+const total = WORD_AT + 4 * LETTER_STEP + TILE_TIME + HOLD
 
 function shouldShow() {
   try {
@@ -39,7 +44,7 @@ export default function Splash() {
       /* private mode: it may show again next time */
     }
     const leave = () => setPhase((p) => (p === 'on' ? 'leaving' : p))
-    const t = setTimeout(leave, TOTAL * 1000)
+    const t = setTimeout(leave, total * 1000)
     window.addEventListener('keydown', leave)
     return () => {
       clearTimeout(t)
@@ -49,18 +54,17 @@ export default function Splash() {
 
   useEffect(() => {
     if (phase !== 'leaving') return
-    const t = setTimeout(() => setPhase('off'), 550)
+    const t = setTimeout(() => setPhase('off'), 350)
     return () => clearTimeout(t)
   }, [phase])
 
-  if (phase === 'off') return null
-  const wordAt = TILE_START + TILES.length * TILE_STEP + 0.3
 
+  if (phase === 'off') return null
   return (
     <div
       role="presentation"
       onClick={() => setPhase('leaving')}
-      className={`fixed inset-0 z-[100] flex cursor-pointer flex-col items-center justify-center gap-[6vmin] bg-[#0d0d0c] transition-opacity duration-500 ${
+      className={`fixed inset-0 z-[100] flex cursor-pointer flex-col items-center justify-center gap-[6vmin] bg-[#0d0d0c] transition-opacity duration-300 ease-out ${
         phase === 'leaving' ? 'opacity-0' : 'opacity-100'
       }`}
     >
@@ -75,7 +79,7 @@ export default function Splash() {
           <span
             key={pos}
             className={`trace-bracket absolute size-[56px] border-[#ece6da] ${pos}`}
-            style={{ animationDelay: `${i * 0.06}s` }}
+            style={{ animationDelay: `${i * 0.03}s` }}
           />
         ))}
         {TILES.map((t, i) => (
@@ -93,12 +97,12 @@ export default function Splash() {
           />
         ))}
         {/* the empty square cut out of the mosaic */}
-        <div className="trace-tile absolute bg-[#0d0d0c]" style={{ left: 228, top: 300, width: 40, height: 40, animationDelay: `${wordAt - 0.2}s` }} />
+        <div className="trace-tile absolute bg-[#0d0d0c]" style={{ left: 228, top: 300, width: 40, height: 40, animationDelay: `${TILE_START + 5 * TILE_STEP}s` }} />
       </div>
       <div aria-label="TRACE" className="flex items-end gap-[3.2vmin] text-[clamp(40px,9vmin,96px)] font-light leading-none text-[#ece6da]">
         {/* the poster's A has no crossbar, just a dot under the apex */}
         {['T', 'R', 'Λ', 'C', 'E'].map((ch, i) => (
-          <span key={i} aria-hidden className="trace-letter relative" style={{ animationDelay: `${wordAt + i * 0.09}s` }}>
+          <span key={i} aria-hidden className="trace-letter relative" style={{ animationDelay: `${WORD_AT + i * LETTER_STEP}s` }}>
             {ch}
             {ch === 'Λ' && <span className="absolute bottom-[0.2em] left-1/2 size-[0.09em] -translate-x-1/2 rounded-full bg-[#8a857b]" />}
           </span>

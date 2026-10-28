@@ -42,7 +42,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         settings.storage_dir.mkdir(parents=True, exist_ok=True)
         yield
 
-    app = FastAPI(title="AI Crime Scene Sketch Generator", lifespan=lifespan)
+    app = FastAPI(title="TRACE", lifespan=lifespan)
     app.state.settings = settings
     app.state.engine = make_engine(settings.database_url)
     app.state.login_limiter = LoginLimiter()

@@ -1,4 +1,4 @@
-"""Copy one user's cases from another SketchLab database (and its storage folder) into this one.
+"""Copy one user's cases from another TRACE database (and its storage folder) into this one.
 
 Usage: uv run python -m scripts.import_cases OLD_DB OLD_STORAGE USERNAME
 Cases get new case numbers here; sketches, versions, chat, details, interviews, variants and

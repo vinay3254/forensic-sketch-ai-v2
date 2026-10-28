@@ -1,7 +1,7 @@
 [project]
 name = "head3d"
 version = "0.1.0"
-description = "SketchLab 3D head worker: TripoSR on the GPU, photo PNG in, GLB out"
+description = "TRACE 3D head worker: TripoSR on the GPU, photo PNG in, GLB out"
 requires-python = "==3.11.*"
 dependencies = [
     "einops==0.7.0",

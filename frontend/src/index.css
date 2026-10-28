@@ -66,25 +66,20 @@ input:focus {
   border-color: var(--color-ink) !important;
 }
 
-/* TRACE splash */
+/* TRACE splash: short and calm, opacity and a few pixels of movement only */
 @keyframes trace-bracket {
-  from { opacity: 0; transform: scale(1.35); }
-  to { opacity: 1; transform: scale(1); }
+  from { opacity: 0; transform: scale(1.06); }
+  to { opacity: 1; transform: none; }
 }
-@keyframes trace-tile {
-  from { opacity: 0; transform: translateY(14px) scale(0.94); filter: brightness(1.6); }
-  to { opacity: 1; transform: none; filter: none; }
+@keyframes trace-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
 }
-@keyframes trace-blue {
-  0% { box-shadow: 0 0 0 0 rgba(60, 110, 190, 0); }
-  60% { box-shadow: 0 0 40px 6px rgba(60, 110, 190, 0.45); }
-  100% { box-shadow: 0 0 18px 0 rgba(60, 110, 190, 0.25); }
+@keyframes trace-glow {
+  from { box-shadow: 0 0 0 0 rgba(70, 120, 200, 0); }
+  to { box-shadow: 0 0 22px 2px rgba(70, 120, 200, 0.28); }
 }
-@keyframes trace-letter {
-  from { opacity: 0; transform: translateY(10px); letter-spacing: 0.2em; }
-  to { opacity: 1; transform: none; letter-spacing: 0; }
-}
-.trace-bracket { opacity: 0; animation: trace-bracket 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-.trace-tile { opacity: 0; animation: trace-tile 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-.trace-blue { animation: trace-tile 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) forwards, trace-blue 1.4s ease-out 0.4s forwards; animation-delay: inherit; }
-.trace-letter { opacity: 0; animation: trace-letter 0.5s ease-out forwards; }
+.trace-bracket { opacity: 0; animation: trace-bracket 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.trace-tile { opacity: 0; animation: trace-rise 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.trace-blue { animation-name: trace-rise, trace-glow; animation-duration: 0.38s, 0.6s; }
+.trace-letter { opacity: 0; animation: trace-rise 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards; }

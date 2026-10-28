@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { login } from '../api'
+import TraceMark from '../components/TraceMark'
 
 export default function LoginPage() {
   const [username, setUsername] = useState('')
@@ -25,7 +26,10 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center">
       <form onSubmit={submit} className="w-80 space-y-4 rounded-lg bg-white p-6 shadow">
-        <h1 className="text-xl font-semibold">Sketch Generator</h1>
+        <h1 className="flex flex-col items-center gap-1 pb-2">
+          <TraceMark size="lg" />
+          <span className="text-xs text-muted">Forensic sketch workspace</span>
+        </h1>
         <label className="block text-sm">
           Username
           <input

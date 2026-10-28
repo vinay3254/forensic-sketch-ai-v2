@@ -1,4 +1,4 @@
-"""SketchLab 3D head worker. Photo PNG in, approximate 3D head (GLB with vertex colours) out.
+"""TRACE 3D head worker. Photo PNG in, approximate 3D head (GLB with vertex colours) out.
 
 Runs TripoSR on the GPU in its own process so the web app never loads PyTorch.
   uv run --project head3d python head3d/fetch_triposr.py           # once
@@ -49,7 +49,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="SketchLab head3d", lifespan=lifespan)
+app = FastAPI(title="TRACE head3d", lifespan=lifespan)
 
 
 def make_head(photo: Image.Image) -> bytes:

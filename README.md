@@ -1,4 +1,6 @@
-# AI Crime Scene Sketch Generator
+# TRACE
+
+Forensic sketch workspace: witness interview, pencil sketch, refinement and case sheet.
 
 HackFest 2026 · Track 1 (AI Nexus) · Problem T1-P.
 

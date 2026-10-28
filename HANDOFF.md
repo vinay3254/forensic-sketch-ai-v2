@@ -1,6 +1,6 @@
 # Handoff
 
-Status of SketchLab as of 2026-10-28. Branch `main` (the only branch), remote `origin` = `vinay3254/forensic-sketch-ai-v2` (private).
+Status of TRACE (renamed from SketchLab) as of 2026-10-28. Branch `main` (the only branch), remote `origin` = `vinay3254/forensic-sketch-ai-v2` (private).
 
 ## Working
 

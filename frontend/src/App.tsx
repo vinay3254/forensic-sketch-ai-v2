@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Home, LogOut, PenLine, Search, ShieldCheck, Sparkles } from 'lucide-react'
+import { Home, LogOut, PenLine, Search, ShieldCheck } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useMatch, useNavigate } from 'react-router-dom'
 import { listCases, logout, me } from './api'
@@ -7,6 +7,7 @@ import CaseBar from './components/CaseBar'
 import { CASE_PAGES } from './components/caseTabs'
 import CommandPalette, { openPalette } from './components/CommandPalette'
 import Splash from './components/Splash'
+import TraceMark from './components/TraceMark'
 import { recentCases, RECENT_EVENT, rememberVisit } from './lib/recent'
 import AuditPage from './pages/AuditPage'
 import CasesPage from './pages/CasesPage'
@@ -104,11 +105,8 @@ function Shell({ user, children }: { user: User; children: ReactNode }) {
     <div className="box-border h-screen p-4">
       <div className="grid h-full grid-cols-[210px_minmax(0,1fr)] overflow-hidden rounded-[28px] border border-ink/10 bg-white/60 shadow-[0_30px_80px_-40px_rgba(38,36,31,0.45)] backdrop-blur-xl">
         <aside className="flex min-h-0 flex-col gap-6 overflow-y-auto border-r border-black/[0.06] px-3 py-6">
-          <Link to="/cases" className="flex items-center gap-2 px-3 text-ink">
-            <span className="grid size-7 place-items-center rounded-full bg-ink text-white">
-              <Sparkles size={14} />
-            </span>
-            <span className="text-[17px] font-semibold tracking-[-0.02em]">SketchLab</span>
+          <Link to="/cases" className="px-3">
+            <TraceMark />
           </Link>
           <nav className="flex flex-col gap-1">
             <NavLink end to="/cases" className={navItem}>
