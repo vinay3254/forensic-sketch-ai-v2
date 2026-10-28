@@ -2,8 +2,6 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { ChatMsg } from '../types'
 import { MAX_TEXT } from './DescriptionForm'
 
-const SUGGESTIONS = ['Make the jaw wider', 'Thicker eyebrows', 'Shorter hair']
-
 interface Props {
   chat: ChatMsg[]
   busy: boolean
@@ -53,18 +51,6 @@ export default function RefineChat({ chat, busy, onSend, onStartOver }: Props) {
           )
         })}
         <div ref={end} />
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        {SUGGESTIONS.map((s) => (
-          <button
-            key={s}
-            onClick={() => setText(s)}
-            disabled={busy}
-            className="rounded-full border border-line bg-field px-[11px] py-1.5 text-xs text-body hover:border-ink hover:text-ink disabled:opacity-50"
-          >
-            {s}
-          </button>
-        ))}
       </div>
       <form onSubmit={submit} className="flex gap-1.5 rounded-2xl bg-tint p-1.5">
         <input

@@ -1,7 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { ApiError, generate, getCase, listInterviews, makePhoto, refine, revert, startInterview } from '../api'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
+import {
+  ApiError,
+  generate,
+  getCase,
+  listInterviews,
+  makePhoto,
+  refine,
+  revert,
+  startInterview,
+} from '../api'
 import AttributePanel from '../components/AttributePanel'
 import DescriptionForm from '../components/DescriptionForm'
 import FaceCanvas, { type View } from '../components/FaceCanvas'
@@ -20,7 +29,10 @@ const RETRYABLE = new Set(['AI_REFUSED', 'AI_UNAVAILABLE'])
 
 function InterviewButtons({ caseId }: { caseId: number }) {
   const navigate = useNavigate()
-  const { data: interviews } = useQuery({ queryKey: ['interviews', caseId], queryFn: () => listInterviews(caseId) })
+  const { data: interviews } = useQuery({
+    queryKey: ['interviews', caseId],
+    queryFn: () => listInterviews(caseId),
+  })
   const start = useMutation({
     mutationFn: () => startInterview(caseId),
     onSuccess: (iv) => navigate(`/cases/${caseId}/interviews/${iv.id}`),
@@ -29,11 +41,18 @@ function InterviewButtons({ caseId }: { caseId: number }) {
   return (
     <>
       {draft && (
-        <button onClick={() => navigate(`/cases/${caseId}/interviews/${draft.id}`)} className={btnLight}>
+        <button
+          onClick={() => navigate(`/cases/${caseId}/interviews/${draft.id}`)}
+          className={btnLight}
+        >
           Continue interview #{draft.id}
         </button>
       )}
-      <button onClick={() => start.mutate()} disabled={start.isPending} className={btnDark}>
+      <button
+        onClick={() => start.mutate()}
+        disabled={start.isPending}
+        className={btnDark}
+      >
         {draft ? 'New interview' : 'Start witness interview'}
       </button>
     </>
@@ -42,16 +61,21 @@ function InterviewButtons({ caseId }: { caseId: number }) {
 
 export default function WorkspacePage() {
   const caseId = Number(useParams().id)
+  const location = useLocation()
   const queryClient = useQueryClient()
   const [selectedId, setSelectedId] = useState<number>()
   const [startingOver, setStartingOver] = useState(false)
   const [view, setView] = useState<View>('sketch')
-  const { data, isPending, error } = useQuery({ queryKey: ['case', caseId], queryFn: () => getCase(caseId) })
+  const { data, isPending, error } = useQuery({
+    queryKey: ['case', caseId],
+    queryFn: () => getCase(caseId),
+  })
 
   const mutation = useMutation({
     mutationFn: async (action: Action) => {
       if (action.kind === 'generate') return generate(caseId, action.text)
-      if (action.kind === 'refine') return (await refine(caseId, action.text)).version
+      if (action.kind === 'refine')
+        return (await refine(caseId, action.text)).version
       if (action.kind === 'photo') return makePhoto(caseId, action.versionId)
       return revert(caseId, action.versionId)
     },
@@ -67,7 +91,10 @@ export default function WorkspacePage() {
 
   if (isPending) return <p className="p-4 text-muted">Loading…</p>
   if (error) {
-    const msg = error instanceof ApiError && error.code === 'FORBIDDEN' ? 'You do not have access to this case.' : error.message
+    const msg =
+      error instanceof ApiError && error.code === 'FORBIDDEN'
+        ? 'You do not have access to this case.'
+        : error.message
     return <p className="rounded-2xl bg-red-50 p-4 text-red-700">{msg}</p>
   }
 
@@ -81,7 +108,11 @@ export default function WorkspacePage() {
   return (
     <>
       <PageHeader
-        crumbs={[{ label: 'Cases', to: '/cases' }, { label: c.case_number, mono: true }, { label: 'Workspace' }]}
+        crumbs={[
+          { label: 'Cases', to: '/cases' },
+          { label: c.case_number, mono: true },
+          { label: 'Workspace' },
+        ]}
         title={c.title}
         actions={<InterviewButtons caseId={caseId} />}
       />
@@ -103,6 +134,11 @@ export default function WorkspacePage() {
         <section className="flex min-h-[28rem] flex-col overflow-hidden rounded-[22px] bg-white p-5 lg:min-h-0">
           {showForm ? (
             <DescriptionForm
+              initialText={
+                typeof location.state?.description === 'string'
+                  ? location.state.description
+                  : ''
+              }
               busy={busy}
               replacing={!!latest}
               onSubmit={(text) => mutation.mutate({ kind: 'generate', text })}
@@ -128,7 +164,9 @@ export default function WorkspacePage() {
               setSelectedId(id)
               setView('sketch')
             }}
-            onRevert={(versionId) => mutation.mutate({ kind: 'revert', versionId })}
+            onRevert={(versionId) =>
+              mutation.mutate({ kind: 'revert', versionId })
+            }
             onNew={() => setStartingOver(true)}
           />
         </section>
@@ -137,7 +175,10 @@ export default function WorkspacePage() {
             caseId={caseId}
             version={selected}
             busy={busy}
-            onMakePhoto={() => selected && mutation.mutate({ kind: 'photo', versionId: selected.id })}
+            onMakePhoto={() =>
+              selected &&
+              mutation.mutate({ kind: 'photo', versionId: selected.id })
+            }
           />
         </section>
       </div>

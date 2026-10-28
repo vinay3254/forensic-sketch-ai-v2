@@ -14,6 +14,8 @@ export interface Case {
   created_at: string
   created_by: number
   details: CaseDetails
+  latest_image_url: string | null
+  version_count: number
 }
 
 // mirrors backend/cases/details.py

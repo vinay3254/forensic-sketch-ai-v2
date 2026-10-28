@@ -81,3 +81,13 @@ def test_case_number_clash_retries_instead_of_500(client, seed_users, login, mon
     monkeypatch.setattr(routes, "next_case_number", stale_then_real)
     r = client.post("/api/cases", json={"title": "b"})
     assert r.status_code == 200 and r.json()["case_number"].endswith("-0002")
+
+
+def test_case_list_carries_latest_sketch_thumbnail(client, seed_users, login):
+    login(client, "officer1", "officer1pass")
+    cid = client.post("/api/cases", json={"title": "t"}).json()["id"]
+    assert client.get("/api/cases").json()[0]["latest_image_url"] is None
+    client.post(f"/api/cases/{cid}/generate", json={"description": "male"})
+    v2 = client.post(f"/api/cases/{cid}/refine", json={"message": "bigger nose"}).json()["version"]
+    row = client.get("/api/cases").json()[0]
+    assert row["latest_image_url"] == v2["image_url"] and row["version_count"] == 2

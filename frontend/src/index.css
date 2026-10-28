@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 
-/* Case Workspace design (Claude Design): warm paper, ink, one violet accent */
+/* soft glass on a warm peach/lilac wash; ink for primary actions, one violet accent */
 @theme {
   --font-sans: 'Geist', system-ui, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, monospace;
@@ -25,7 +25,23 @@
 }
 
 body {
-  @apply bg-paper font-sans text-ink antialiased;
+  @apply font-sans text-ink antialiased;
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(60rem 40rem at 100% 100%, #f6c9b0 0%, transparent 60%),
+    radial-gradient(50rem 36rem at 0% 100%, #f3dccf 0%, transparent 55%),
+    radial-gradient(60rem 40rem at 50% 0%, #e9e7f3 0%, transparent 60%),
+    #ecebef;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
 }
 
 textarea:focus,

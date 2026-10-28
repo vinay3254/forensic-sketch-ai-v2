@@ -3,14 +3,21 @@ import { useState, type FormEvent } from 'react'
 export const MAX_TEXT = 2000
 
 interface Props {
+  initialText?: string
   busy: boolean
   replacing: boolean
   onSubmit: (description: string) => void
   onCancel?: () => void
 }
 
-export default function DescriptionForm({ busy, replacing, onSubmit, onCancel }: Props) {
-  const [text, setText] = useState('')
+export default function DescriptionForm({
+  busy,
+  replacing,
+  onSubmit,
+  onCancel,
+  initialText = '',
+}: Props) {
+  const [text, setText] = useState(initialText)
 
   function submit(e: FormEvent) {
     e.preventDefault()
@@ -36,7 +43,12 @@ export default function DescriptionForm({ busy, replacing, onSubmit, onCancel }:
           {text.length} / {MAX_TEXT}
         </span>
         {onCancel && (
-          <button type="button" onClick={onCancel} disabled={busy} className="ml-auto rounded-full px-3 py-2 text-muted hover:text-ink">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={busy}
+            className="ml-auto rounded-full px-3 py-2 text-muted hover:text-ink"
+          >
             Cancel
           </button>
         )}

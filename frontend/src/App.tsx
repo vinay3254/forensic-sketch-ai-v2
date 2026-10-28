@@ -1,12 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { ReactNode } from 'react'
-import { Link, Navigate, NavLink, Route, Routes, useMatch, useNavigate } from 'react-router-dom'
-import { getCase, listCases, listInterviews, logout, me, startInterview } from './api'
+import { Home, LogOut, PenLine, Search, ShieldCheck, Sparkles } from 'lucide-react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { Link, Navigate, NavLink, Route, Routes, useLocation, useMatch, useNavigate } from 'react-router-dom'
+import { listCases, logout, me } from './api'
+import CaseBar from './components/CaseBar'
+import { CASE_PAGES } from './components/caseTabs'
+import CommandPalette, { openPalette } from './components/CommandPalette'
+import { recentCases, RECENT_EVENT, rememberVisit } from './lib/recent'
 import AuditPage from './pages/AuditPage'
 import CasesPage from './pages/CasesPage'
 import CaseSheetPage from './pages/CaseSheetPage'
 import DetailsPage from './pages/DetailsPage'
 import InterviewPage from './pages/InterviewPage'
+import InterviewRedirect from './pages/InterviewRedirect'
 import LoginPage from './pages/LoginPage'
 import WorkspacePage from './pages/WorkspacePage'
 import type { User } from './types'
@@ -16,46 +22,49 @@ export function useMe() {
 }
 
 const navItem = ({ isActive }: { isActive: boolean }) =>
-  `flex items-center justify-between rounded-[10px] px-2.5 py-[9px] text-sm ${
-    isActive ? 'bg-cream font-medium text-ink' : 'text-side-text hover:bg-side hover:text-white'
+  `flex w-full items-center gap-3 rounded-[14px] px-3 py-2.5 text-[13px] ${
+    isActive ? 'bg-white font-medium text-ink shadow-[0_2px_10px_-4px_rgba(0,0,0,0.18)]' : 'text-body hover:bg-white/50 hover:text-ink'
   }`
 
-// the open case's own pages: sketch, details, latest interview, sheet
-function CaseNav({ caseId }: { caseId: number }) {
-  const navigate = useNavigate()
-  const c = useQuery({ queryKey: ['case', caseId], queryFn: () => getCase(caseId) })
-  const interviews = useQuery({ queryKey: ['interviews', caseId], queryFn: () => listInterviews(caseId) })
-  const start = useMutation({
-    mutationFn: () => startInterview(caseId),
-    onSuccess: (iv) => navigate(`/cases/${caseId}/interviews/${iv.id}`),
-  })
-  const latest = interviews.data?.find((iv) => iv.status === 'draft') ?? interviews.data?.[0]
+// the last cases opened here, newest first; one click reopens the page you were on
+function RecentCases({ caseId }: { caseId: number | null }) {
+  const [recent, setRecent] = useState(recentCases)
+  const cases = useQuery({ queryKey: ['cases'], queryFn: listCases, staleTime: 30_000 })
+  useEffect(() => {
+    const update = () => setRecent(recentCases())
+    window.addEventListener(RECENT_EVENT, update)
+    return () => window.removeEventListener(RECENT_EVENT, update)
+  }, [])
+  const byId = new Map((cases.data ?? []).map((c) => [c.id, c]))
+  const shown = recent.filter((r) => byId.has(r.id)).slice(0, 5)
+  if (!shown.length) return null
   return (
     <div className="flex flex-col gap-1">
-      <div className="px-2.5 pb-1.5 text-[11px] uppercase tracking-[0.08em] text-faint">Open case</div>
-      <div className="mb-1.5 flex flex-col gap-0.5 rounded-xl bg-side p-2.5">
-        <div className="font-mono text-[11px] text-lilac">{c.data?.case.case_number ?? '…'}</div>
-        <div className="truncate text-sm font-medium">{c.data?.case.title ?? ''}</div>
-      </div>
-      <NavLink end to={`/cases/${caseId}`} className={navItem}>
-        Sketch workspace
-      </NavLink>
-      <NavLink to={`/cases/${caseId}/details`} className={navItem}>
-        Person &amp; case details
-      </NavLink>
-      {latest ? (
-        <NavLink to={`/cases/${caseId}/interviews/${latest.id}`} className={navItem}>
-          Witness interview #{latest.id}
-        </NavLink>
-      ) : (
-        <button onClick={() => start.mutate()} disabled={start.isPending} className={navItem({ isActive: false })}>
-          Witness interview
-          <span className="text-faint">+</span>
-        </button>
-      )}
-      <NavLink to={`/cases/${caseId}/sheet`} className={navItem}>
-        Case sheet
-      </NavLink>
+      <div className="px-3 pb-1 text-[11px] uppercase tracking-[0.08em] text-faint">Recent cases</div>
+      {shown.map((r) => {
+        const c = byId.get(r.id)!
+        return (
+          <Link
+            key={r.id}
+            to={r.path}
+            className={`flex items-center gap-2.5 rounded-[14px] px-2 py-1.5 text-[13px] ${
+              r.id === caseId ? 'bg-white text-ink shadow-[0_2px_10px_-4px_rgba(0,0,0,0.18)]' : 'text-body hover:bg-white/50 hover:text-ink'
+            }`}
+          >
+            {c.latest_image_url ? (
+              <img src={c.latest_image_url} alt="" className="size-8 shrink-0 rounded-lg bg-cream object-cover object-top" />
+            ) : (
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-white/70 text-faint">
+                <PenLine size={14} />
+              </span>
+            )}
+            <span className="flex min-w-0 flex-col leading-tight">
+              <span className="truncate">{c.title}</span>
+              <span className="font-mono text-[10px] text-faint">{c.case_number}</span>
+            </span>
+          </Link>
+        )
+      })}
     </div>
   )
 }
@@ -63,9 +72,9 @@ function CaseNav({ caseId }: { caseId: number }) {
 function Shell({ user, children }: { user: User; children: ReactNode }) {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   const caseMatch = useMatch('/cases/:id/*')
-  const caseId = caseMatch ? Number(caseMatch.params.id) : null
-  const cases = useQuery({ queryKey: ['cases'], queryFn: listCases, staleTime: 60_000 })
+  const caseId = caseMatch && /^\d+$/.test(caseMatch.params.id ?? '') ? Number(caseMatch.params.id) : null
   const out = useMutation({
     mutationFn: logout,
     onSettled: () => {
@@ -73,40 +82,71 @@ function Shell({ user, children }: { user: User; children: ReactNode }) {
       navigate('/login')
     },
   })
+
+  // remember where each case was left, and switch its pages with Alt+1…4
+  useEffect(() => {
+    if (caseId && !pathname.endsWith('/interview')) rememberVisit(caseId, pathname)
+  }, [caseId, pathname])
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const n = Number(e.key)
+      if (!caseId || !e.altKey || !(n >= 1 && n <= CASE_PAGES.length)) return
+      e.preventDefault()
+      navigate(CASE_PAGES[n - 1].path(caseId))
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [caseId, navigate])
+
   return (
-    <div className="box-border grid h-screen grid-cols-[clamp(180px,20vw,232px)_minmax(0,1fr)] gap-3 overflow-hidden p-3">
-      <aside className="box-border flex h-full min-h-0 flex-col gap-6 overflow-y-auto rounded-[22px] bg-ink px-3.5 py-5 text-[#ededea]">
-        <Link to="/cases" className="flex items-center gap-2.5 px-2 text-[#ededea]">
-          <div className="grid size-[30px] place-items-center rounded-[9px] bg-cream text-sm font-semibold text-ink">S</div>
-          <div className="text-[15px] font-semibold tracking-[-0.01em]">Sketch Generator</div>
-        </Link>
-        <div className="flex flex-col gap-1">
-          <div className="px-2.5 pb-1.5 text-[11px] uppercase tracking-[0.08em] text-faint">Workspace</div>
-          <NavLink end to="/cases" className={navItem}>
-            Cases
-            <span className="font-mono text-[11px] text-faint">{cases.data?.length ?? ''}</span>
-          </NavLink>
-          {user.role === 'admin' && (
-            <NavLink to="/audit" className={navItem}>
-              Audit log
+    <div className="box-border h-screen p-4">
+      <div className="grid h-full grid-cols-[210px_minmax(0,1fr)] overflow-hidden rounded-[28px] border border-white/80 bg-white/45 shadow-[0_30px_80px_-40px_rgba(80,50,30,0.45)] backdrop-blur-2xl">
+        <aside className="flex min-h-0 flex-col gap-6 overflow-y-auto border-r border-black/[0.06] px-3 py-6">
+          <Link to="/cases" className="flex items-center gap-2 px-3 text-ink">
+            <span className="grid size-7 place-items-center rounded-full bg-ink text-white">
+              <Sparkles size={14} />
+            </span>
+            <span className="text-[17px] font-semibold tracking-[-0.02em]">SketchLab</span>
+          </Link>
+          <nav className="flex flex-col gap-1">
+            <NavLink end to="/cases" className={navItem}>
+              <Home size={16} /> Home
             </NavLink>
-          )}
-        </div>
-        {caseId && !Number.isNaN(caseId) && <CaseNav key={caseId} caseId={caseId} />}
-        <div className="mt-auto flex items-center gap-2.5 border-t border-side-line p-2.5">
-          <div className="grid size-8 place-items-center rounded-full bg-[#3a3a40] text-xs font-medium">
-            {user.username[0]?.toUpperCase()}
+            <button onClick={openPalette} className={navItem({ isActive: false })}>
+              <Search size={16} /> Jump to…
+              <kbd className="ml-auto rounded border border-line px-1 font-mono text-[10px] text-faint">Ctrl K</kbd>
+            </button>
+            {user.role === 'admin' && (
+              <NavLink to="/audit" className={navItem}>
+                <ShieldCheck size={16} /> Audit log
+              </NavLink>
+            )}
+          </nav>
+          <RecentCases caseId={caseId} />
+          <div className="mt-auto flex flex-col gap-3 rounded-[18px] border border-white/60 bg-[#c7c7cf]/45 p-3">
+            <div className="flex items-center gap-2.5">
+              <div className="grid size-9 place-items-center rounded-full bg-gradient-to-br from-[#f6c9b0] to-[#c9b8f0] text-sm font-semibold text-ink ring-2 ring-white">
+                {user.username[0]?.toUpperCase()}
+              </div>
+              <div className="flex min-w-0 flex-col">
+                <span className="truncate text-[13px] font-medium">{user.username}</span>
+                <span className="text-xs capitalize text-muted">{user.role}</span>
+              </div>
+            </div>
+            <button
+              onClick={() => out.mutate()}
+              className="flex items-center justify-center gap-2 rounded-full bg-white/80 py-2 text-[13px] font-medium text-ink shadow-[0_2px_8px_-4px_rgba(0,0,0,0.3)] hover:bg-white"
+            >
+              <LogOut size={14} /> Log out
+            </button>
           </div>
-          <div className="flex min-w-0 flex-col">
-            <span className="truncate text-[13px] font-medium">{user.username}</span>
-            <span className="text-xs capitalize text-faint">{user.role}</span>
-          </div>
-          <button onClick={() => out.mutate()} title="Log out" className="ml-auto text-xs text-faint hover:text-white">
-            Log out
-          </button>
+        </aside>
+        <div className="flex min-h-0 min-w-0 flex-col gap-3 p-5">
+          {caseId && <CaseBar caseId={caseId} />}
+          {children}
         </div>
-      </aside>
-      <main className="flex h-full min-h-0 min-w-0 flex-col gap-3">{children}</main>
+      </div>
+      <CommandPalette admin={user.role === 'admin'} caseId={caseId} />
     </div>
   )
 }
@@ -123,12 +163,62 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/cases" element={<Guard><CasesPage /></Guard>} />
-      <Route path="/cases/:id" element={<Guard><WorkspacePage /></Guard>} />
-      <Route path="/cases/:id/details" element={<Guard><DetailsPage /></Guard>} />
-      <Route path="/cases/:id/sheet" element={<Guard><CaseSheetPage /></Guard>} />
-      <Route path="/cases/:id/interviews/:iid" element={<Guard><InterviewPage /></Guard>} />
-      <Route path="/audit" element={<Guard admin><AuditPage /></Guard>} />
+      <Route
+        path="/cases"
+        element={
+          <Guard>
+            <CasesPage />
+          </Guard>
+        }
+      />
+      <Route
+        path="/cases/:id"
+        element={
+          <Guard>
+            <WorkspacePage />
+          </Guard>
+        }
+      />
+      <Route
+        path="/cases/:id/details"
+        element={
+          <Guard>
+            <DetailsPage />
+          </Guard>
+        }
+      />
+      <Route
+        path="/cases/:id/sheet"
+        element={
+          <Guard>
+            <CaseSheetPage />
+          </Guard>
+        }
+      />
+      <Route
+        path="/cases/:id/interview"
+        element={
+          <Guard>
+            <InterviewRedirect />
+          </Guard>
+        }
+      />
+      <Route
+        path="/cases/:id/interviews/:iid"
+        element={
+          <Guard>
+            <InterviewPage />
+          </Guard>
+        }
+      />
+      <Route
+        path="/audit"
+        element={
+          <Guard admin>
+            <AuditPage />
+          </Guard>
+        }
+      />
       <Route path="*" element={<Navigate to="/cases" replace />} />
     </Routes>
   )

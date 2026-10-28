@@ -13,6 +13,13 @@ Status of SketchLab as of 2026-10-28. Branch `main` (the only branch), remote `o
 - Tests: `uv run pytest -q` → 265 passed. `npm run build` passes.
 - Live AI check (Codex models) passed: generate, refine, realistic photo, both exports.
 
+## Light UI and navigation (2026-10-28)
+
+- Seto-style light glass frame (gradient background, light sidebar with `lucide-react` icons).
+- Home (`/cases`): welcome, three action cards, a composer (typed or dictated description creates a case and pre-fills the workspace form; generating stays a click), and a case-history rail with search, latest-sketch thumbnails (`latest_image_url`, `version_count` on `GET /api/cases`) and quick links to each case page.
+- Moving around: a case bar on every case page (Sketch · Details · Interview · Case sheet, Alt+1…4), Ctrl/⌘K jump-to palette (cases, their pages, New case, Home, Audit), recent cases in the sidebar, and cases reopen on the page last used (browser `localStorage`, per device). `/cases/:id/interview` opens the draft or latest interview, or offers to start one.
+- Still in the older styling: interview, audit and login pages.
+
 ## Smart Witness Interview (in progress)
 
 Spec: `docs/superpowers/specs/2026-10-28-smart-witness-interview-design.md`. Built one feature at a time; the user approves each before the next starts.

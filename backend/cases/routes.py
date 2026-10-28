@@ -29,6 +29,8 @@ class CaseOut(BaseModel):
     created_at: datetime
     created_by: int
     details: dict = {}
+    latest_image_url: str | None = None  # the newest sketch, for the case list
+    version_count: int = 0
 
     @classmethod
     def of(cls, c: Case) -> "CaseOut":
@@ -106,7 +108,20 @@ def list_cases(request: Request, user: User = Depends(current_user), session: Se
     q = select(Case).order_by(Case.id.desc())
     if user.role != "admin":
         q = q.where(Case.created_by == user.id)
-    cases = [CaseOut.of(c) for c in session.exec(q).all()]
+    rows = session.exec(q).all()
+    latest: dict[int, FaceVersion] = {}
+    counts: dict[int, int] = {}
+    for v in session.exec(select(FaceVersion).where(FaceVersion.case_id.in_([c.id for c in rows]))).all():
+        counts[v.case_id] = counts.get(v.case_id, 0) + 1
+        if v.case_id not in latest or v.version_no > latest[v.case_id].version_no:
+            latest[v.case_id] = v
+    cases = [
+        CaseOut.of(c).model_copy(update={
+            "latest_image_url": VersionOut.of(latest[c.id]).image_url if c.id in latest else None,
+            "version_count": counts.get(c.id, 0),
+        })
+        for c in rows
+    ]
     record(session, request, "case_list", user)
     return cases
 
