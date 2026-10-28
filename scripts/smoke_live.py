@@ -1,6 +1,6 @@
 """Call the live LLM service once per AI operation and report timings.
 
-Usage: AI_MOCK=0 uv run python scripts/smoke_live.py
+Usage: AI_MOCK=0 uv run python -m scripts.smoke_live
 Needs LLM_BASE_URL, LLM_API_KEY, LLM_CHAT_MODEL and LLM_IMAGE_MODEL in .env.
 """
 
