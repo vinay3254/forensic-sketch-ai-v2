@@ -22,8 +22,8 @@ Spec: `docs/superpowers/specs/2026-10-28-smart-witness-interview-design.md`. Bui
 | 1 | Fixed neutral question bank + wording tests | done (`1c4a8fc`) |
 | 2 | Interview storage API (start / read / autosave, access control, audit) | done (`4e8afb7`) |
 | 3 | Interview screens: free account + feature steps, statuses, autosave | done (`aa0f750`) |
-| 4 | Speech-to-text (browser Web Speech API, `en-IN`) | **next, waiting for go-ahead** |
-| 5 | Optional extras step (facial hair, hairstyle, glasses, distinguishing features) | not started |
+| 4 | Speech-to-text (browser Web Speech API, `en-IN` default; en-US, Hindi, Kannada) | done |
+| 5 | Optional extras step (facial hair, hairstyle, glasses, distinguishing features) | **next, waiting for go-ahead** |
 | 6 | Review & confirm (lock transcript, SHA-256 in audit) | not started |
 | 7 | Generate sketch from confirmed interview (unknown → blank, uncertain flagged) | not started |
 | 8 | Option B: AI marks features already covered, exact quotes only, off by default | not started |

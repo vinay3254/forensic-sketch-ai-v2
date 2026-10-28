@@ -2,9 +2,9 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getInterview, interviewQuestions, saveInterview } from '../api'
+import AnswerBox, { MAX_TEXT } from '../components/AnswerBox'
 import type { InputSource, InterviewDraft, RecallStatus } from '../types'
 
-const MAX_TEXT = 2000
 const SAVE_DELAY_MS = 800
 
 type Entry = { answer: string; status: RecallStatus | null; source: InputSource | null }
@@ -16,7 +16,10 @@ const STATUSES: { value: RecallStatus; label: string; hint: string; on: string; 
 ]
 
 // typing after dictation (or the reverse) marks the answer as mixed
-const typed = (prev: InputSource | null): InputSource => (prev === 'speech' || prev === 'mixed' ? 'mixed' : 'typed')
+const mark = (prev: InputSource | null, how: 'typed' | 'speech'): InputSource => (prev === null || prev === how ? how : 'mixed')
+
+// a dictated phrase is added after what is already there, never replacing it
+const append = (text: string, phrase: string) => (text && !/\s$/.test(text) ? `${text} ${phrase}` : text + phrase).slice(0, MAX_TEXT)
 
 export default function InterviewPage() {
   const caseId = Number(useParams().id)
@@ -32,6 +35,7 @@ export default function InterviewPage() {
   const [freeSource, setFreeSource] = useState<InputSource | null>(null)
   const [entries, setEntries] = useState<Record<string, Entry>>({})
   const [step, setStep] = useState(0)
+  const [lang, setLang] = useState('en-IN')
   const [loaded, setLoaded] = useState(false)
   const dirty = useRef(false)
 
@@ -90,20 +94,23 @@ export default function InterviewPage() {
   const question = step === 0 ? null : features[step - 1]
   const entry: Entry = question ? (entries[question.key] ?? { answer: '', status: null, source: null }) : { answer: freeRecall, status: null, source: freeSource }
 
-  function edit(change: Partial<Entry>) {
+  function setStatus(status: RecallStatus | null) {
+    if (!question) return
+    dirty.current = true
+    setEntries((prev) => ({ ...prev, [question.key]: { ...(prev[question.key] ?? { answer: '', source: null }), status } }))
+  }
+
+  // `how` records whether the words were typed or dictated; `change` gets the latest text
+  function write(how: 'typed' | 'speech', change: (text: string) => string) {
     dirty.current = true
     if (!question) {
-      if (change.answer !== undefined) {
-        setFreeRecall(change.answer)
-        setFreeSource(typed(freeSource))
-      }
+      setFreeRecall(change)
+      setFreeSource((prev) => mark(prev, how))
       return
     }
     setEntries((prev) => {
       const cur = prev[question.key] ?? { answer: '', status: null, source: null }
-      const next = { ...cur, ...change }
-      if (change.answer !== undefined) next.source = typed(cur.source)
-      return { ...prev, [question.key]: next }
+      return { ...prev, [question.key]: { ...cur, answer: change(cur.answer), source: mark(cur.source, how) } }
     })
   }
 
@@ -159,22 +166,17 @@ export default function InterviewPage() {
           </div>
           {!question && <p className="rounded bg-blue-50 p-3 text-sm text-blue-900">{free.guidance}</p>}
 
-          <label className="block">
-            <span className="text-sm font-medium">Witness's words, exactly as said</span>
-            <textarea
-              value={entry.answer}
-              maxLength={MAX_TEXT}
-              disabled={locked}
-              onChange={(e) => edit({ answer: e.target.value })}
-              rows={question ? 4 : 9}
-              placeholder="Type what the witness says. Do not correct or summarise."
-              className="mt-1 w-full resize-y rounded border p-3 text-sm disabled:bg-slate-50"
-            />
-            <span className="text-xs text-slate-500">
-              {entry.answer.length}/{MAX_TEXT}
-              {entry.source && ` · ${entry.source}`}
-            </span>
-          </label>
+          <AnswerBox
+            key={step}
+            value={entry.answer}
+            source={entry.source}
+            rows={question ? 4 : 9}
+            disabled={locked}
+            lang={lang}
+            onLang={setLang}
+            onType={(text) => write('typed', () => text)}
+            onDictate={(phrase) => write('speech', (text) => append(text, phrase))}
+          />
 
           {question && (
             <div>
@@ -185,7 +187,7 @@ export default function InterviewPage() {
                     key={s.value}
                     title={s.hint}
                     disabled={locked}
-                    onClick={() => edit({ status: entry.status === s.value ? null : s.value })}
+                    onClick={() => setStatus(entry.status === s.value ? null : s.value)}
                     className={`rounded border px-4 py-2 text-sm disabled:opacity-50 ${entry.status === s.value ? s.on : 'border-slate-300 hover:bg-slate-50'}`}
                   >
                     {s.label}
