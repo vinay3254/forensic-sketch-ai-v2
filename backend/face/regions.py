@@ -19,7 +19,7 @@ SKIN, L_BROW, R_BROW, GLASSES, L_EAR, R_EAR, EARRING, NOSE, MOUTH, U_LIP, L_LIP,
     1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 17, 18,
 )
 BROWS = (L_BROW, R_BROW)
-# edit regions without an entry here (jaw, face_shape, facial_hair, marks, ...) change the whole face
+# edit regions without an entry here (jaw, face_shape, marks, ...) change the whole face
 REGION_CLASSES = {
     "nose": (NOSE,),
     "mouth": (MOUTH, U_LIP, L_LIP),
@@ -28,6 +28,7 @@ REGION_CLASSES = {
     "hair": (HAIR, HAT),
     "accessories": (GLASSES,),
     "eyes": (),  # the parser misses narrow eyes; a box between brows and nose is used instead
+    "facial_hair": (),  # no beard class; a box over the lower face is used instead
 }
 FACE_CLASSES = (SKIN, *BROWS, NOSE)
 MIN_FACE_OVERLAP = 0.85  # below this the edit moved the face, and pasting back would misalign
@@ -67,11 +68,27 @@ def _eyes_box(m: np.ndarray) -> np.ndarray | None:
     return box
 
 
+def _lower_face_box(m: np.ndarray) -> np.ndarray | None:
+    skin, nose = np.argwhere(m == SKIN), np.argwhere(m == NOSE)
+    if not len(skin) or not len(nose):
+        return None
+    top = int(nose[:, 0].mean())  # a moustache starts under the middle of the nose
+    bottom = skin[:, 0].max() + PARSE_SIZE // 25  # a beard runs a little past the chin
+    box = np.zeros_like(m, bool)
+    box[top:bottom + 1, skin[:, 1].min():skin[:, 1].max() + 1] = True
+    return box
+
+
+BOXES = {"eyes": _eyes_box, "facial_hair": _lower_face_box}
+
+
 def _region_mask(m: np.ndarray, regions: list[str]) -> np.ndarray | None:
+    """Pixels of `regions` in one class map; an item that is absent (glasses about to be added)
+    adds nothing. None when a box region has no landmarks to anchor it."""
     mask = np.zeros_like(m, bool)
     for r in regions:
-        part = _eyes_box(m) if r == "eyes" else np.isin(m, REGION_CLASSES[r])
-        if part is None or not part.any():
+        part = BOXES[r](m) if r in BOXES else np.isin(m, REGION_CLASSES[r])
+        if part is None:
             return None
         mask |= part
     return mask
@@ -90,7 +107,7 @@ def localize(parser: Parser | None, before: bytes, after: bytes, regions: list[s
         if (face_old & face_new).sum() / max((face_old | face_new).sum(), 1) < MIN_FACE_OVERLAP:
             return None
         a, b = _region_mask(m_old, regions), _region_mask(m_new, regions)
-        if a is None or b is None:
+        if a is None or b is None or not (a | b).any():  # the region must show in at least one image
             return None
         grow = PARSE_SIZE // 40
         mask = Image.fromarray(((a | b) * 255).astype(np.uint8)).filter(ImageFilter.MaxFilter(grow * 2 + 1))

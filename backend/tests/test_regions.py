@@ -6,10 +6,10 @@ from PIL import Image
 
 from backend.face.regions import localize
 
-SKIN, L_BROW, R_BROW, NOSE, HAIR = 1, 2, 3, 10, 17
+SKIN, L_BROW, R_BROW, GLASSES, NOSE, HAIR = 1, 2, 3, 6, 10, 17
 
 
-def face_map(nose=True, shift=0):
+def face_map(nose=True, shift=0, glasses=False):
     m = np.zeros((512, 512), np.uint8)
     m[40:120, 100:412] = HAIR
     m[120 + shift:420 + shift, 140:372] = SKIN
@@ -17,6 +17,8 @@ def face_map(nose=True, shift=0):
     m[180 + shift:195 + shift, 272:342] = R_BROW
     if nose:
         m[240 + shift:300 + shift, 226:286] = NOSE
+    if glasses:
+        m[200 + shift:235 + shift, 160:352] = GLASSES
     return m
 
 
@@ -57,7 +59,7 @@ def test_combines_regions():
     assert at(out, 256, 270) == 50 and at(out, 256, 80) == 50 and at(out, 20, 500) == 200
 
 
-@pytest.mark.parametrize("regions", [["jaw"], ["nose", "facial_hair"], ["marks"], []])
+@pytest.mark.parametrize("regions", [["jaw"], ["nose", "marks"], ["marks"], []])
 def test_unmapped_regions_return_none(regions):
     assert localize(FakeParser(face_map()), png(200), png(50), regions) is None
 
@@ -80,3 +82,15 @@ def test_parser_error_returns_none():
 
 def test_no_parser_returns_none():
     assert localize(None, png(200), png(50), ["nose"]) is None
+
+
+def test_facial_hair_uses_lower_face_box():
+    out = localize(FakeParser(face_map()), png(200), png(50), ["facial_hair"])
+    assert at(out, 256, 340) == 50 and at(out, 200, 400) == 50  # upper lip, chin
+    assert at(out, 256, 150) == 200 and at(out, 256, 80) == 200  # forehead, hair
+
+
+def test_region_added_in_after_image_is_localized():
+    out = localize(FakeParser(face_map(), face_map(glasses=True)), png(200), png(50), ["accessories"])
+    assert at(out, 200, 218) == 50  # new glasses kept
+    assert at(out, 256, 380) == 200 and at(out, 256, 80) == 200
