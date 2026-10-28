@@ -84,3 +84,8 @@ def test_photo_prompt_carries_colours_and_no_crime_words():
     assert "medium brown skin" in p and "dark brown" in p and "short black" in p
     for w in ("suspect", "criminal", "mugshot"):
         assert w not in p
+
+
+def test_photo_prompt_carries_ethnic_appearance():
+    p = build_photo_prompt(Attributes(appearance="South Indian", skin_tone="medium brown"))
+    assert "ethnic appearance: South Indian" in p

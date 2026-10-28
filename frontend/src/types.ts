@@ -40,6 +40,7 @@ export type CaseDetails = Partial<Record<DetailKey, string>>
 export const ATTRIBUTE_KEYS = [
   'gender',
   'age_range',
+  'appearance',
   'skin_tone',
   'face_shape',
   'jaw',

@@ -10,7 +10,7 @@ M = 100  # page margin
 INK, GREY, LINE = 0, 90, 150
 
 FACE_LABELS = {
-    "gender": "Gender", "age_range": "Age", "skin_tone": "Skin", "face_shape": "Face shape", "jaw": "Jaw",
+    "gender": "Gender", "age_range": "Age", "appearance": "Ethnic appearance", "skin_tone": "Skin", "face_shape": "Face shape", "jaw": "Jaw",
     "eyes": "Eyes", "eyebrows": "Eyebrows", "nose": "Nose", "mouth": "Mouth", "ears": "Ears", "hair": "Hair",
     "facial_hair": "Facial hair", "marks": "Marks", "accessories": "Accessories", "notes": "Notes",
 }

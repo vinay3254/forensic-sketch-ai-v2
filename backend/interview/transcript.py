@@ -37,6 +37,7 @@ def has_content(iv: dict) -> bool:
 # which sketch attributes each interview question speaks to
 FIELDS_FOR = {
     "age_gender": ("gender", "age_range"),
+    "appearance": ("appearance",),
     "skin_tone": ("skin_tone",),
     "face_shape": ("face_shape",),
     "eyes": ("eyes",),

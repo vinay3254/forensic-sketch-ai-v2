@@ -33,7 +33,7 @@ def test_prompt_suggests_no_value(prompt):
 def test_bank_covers_the_spec_sections():
     assert FREE_RECALL["key"] == "free_recall"
     assert [f["key"] for f in FEATURES] == [
-        "age_gender", "skin_tone", "face_shape", "eyes", "eyebrows", "nose", "mouth", "ears", "jaw_chin",
+        "age_gender", "appearance", "skin_tone", "face_shape", "eyes", "eyebrows", "nose", "mouth", "ears", "jaw_chin",
     ]
     assert [e["key"] for e in EXTRAS] == [
         "facial_hair", "hairstyle", "glasses_accessories", "distinguishing_features",
@@ -52,3 +52,9 @@ def test_questions_endpoint_returns_the_bank(client, seed_users, login):
 def test_questions_endpoint_needs_login(client):
     r = client.get("/api/interview/questions")
     assert r.status_code == 401 and r.json()["error"]["code"] == "UNAUTHENTICATED"
+
+
+def test_appearance_answer_fills_the_appearance_attribute():
+    from backend.interview.transcript import FIELDS_FOR
+
+    assert FIELDS_FOR["appearance"] == ("appearance",)

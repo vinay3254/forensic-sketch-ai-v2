@@ -6,9 +6,23 @@ DESCRIPTION = "man in his forties, thick hair brushed back, almond-shaped slight
 
 def test_image_prompt_asks_for_rough_hand_drawn_natural_face():
     p = build_image_prompt(Attributes(gender="male", age_range="early twenties")).lower()
-    assert "hand-drawn" in p and "hatching" in p and "not idealised" in p
+    assert "hand-drawn" in p and "hatching" in p
     for w in ("fine pencil strokes", "realistic proportions", "police", "average-looking", "ordinary"):
         assert w not in p
+
+
+def test_image_prompt_neither_beautifies_nor_plainifies():
+    # "not idealised / not a model" pushed every good-looking face towards a plain one
+    p = build_image_prompt(Attributes(gender="male")).lower()
+    for w in ("not idealised", "not glamorised", "not a model"):
+        assert w not in p
+    assert "neither more nor less attractive" in p
+
+
+def test_image_prompt_leads_with_ethnic_appearance():
+    p = build_image_prompt(Attributes(gender="male", appearance="South Indian", eyes="hooded"))
+    assert "Ethnic appearance: South Indian." in p
+    assert p.index("Ethnic appearance") < p.index("Eyes:")
 
 
 def test_image_prompt_lists_features_by_name():

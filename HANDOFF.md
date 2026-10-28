@@ -95,7 +95,9 @@ Done. Refines keep the change inside the edited regions and paste the previous s
 
 ## Sketch style
 
-The image prompt asks for a rough, hand-drawn composite of an ordinary face (loose outlines, hatching, hair as shaded shapes, not idealised), and edits keep that line style. A photocopy-style post-process ("scanned" finish) was tried and dropped in favour of the plain model output.
+The image prompt asks for a rough, hand-drawn composite (loose outlines, hatching, hair as shaded shapes), and edits keep that line style. It used to say "not idealised, not a model", which pushed good-looking faces towards plain ones; it now says "neither more nor less attractive than the description says".
+
+**Ethnic appearance** (`Attributes.appearance`, 2026-10-28): the witness's own words ("South Indian, Telugu-looking"), asked as a neutral interview question after age/gender, listed second in the image prompt and carried into the photo prompt. The extractor is told never to infer it from skin colour. Without it the model drew a generic European face for an Indian description (case 9 vs case 10). A photocopy-style post-process ("scanned" finish) was tried and dropped in favour of the plain model output.
 
 ## Style library (2026-10-28)
 
@@ -120,6 +122,8 @@ The image prompt asks for a rough, hand-drawn composite of an ordinary face (loo
 Decided against: CodeFormer/GFPGAN on exports (adds invented photo detail to sketches/photos), local SDXL/ControlNet on a 6 GB GPU, DECA/3DDFA for 3D, and a GPU worker on the second laptop (also 6 GB VRAM, so no gain).
 
 ## Ideas discussed, not built
+
+- Accuracy, from composite research (Frowd et al.): **pick the closest face** (witness chooses among 4 variants per round, EvoFIT-style; whole-face choosing beat feature description ~4x in a meta-analysis), a **likeness score** (InsightFace sketch vs reference photo, for testing only), **draw-first pad** (witness doodles before the interview; Davidson et al. 2025), morphing several composites, caricature animation for bulletins, photo/CCTV still to sketch.
 
 - Hugging Face image models as an alternative backend: FLUX.1-schnell (generate) + Qwen-Image-Edit-2511 (edit / photo). Needs an HF token and a second AI client.
 - A UI redesign was tried and reverted at the user's request (`06ccce8` reverted by `a9f43d5`).

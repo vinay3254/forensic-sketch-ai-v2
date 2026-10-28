@@ -19,6 +19,7 @@ def _q(key: str, label: str, prompt: str, optional: bool = False) -> dict:
 
 FEATURES = [
     _q("age_gender", "Age and gender", "What can you tell me about the person's age and gender, if you remember?"),
+    _q("appearance", "Ethnic appearance", "Describe the person's ethnic appearance, if you remember it."),
     _q("skin_tone", "Skin", "Describe the person's skin, if you remember it."),
     _q("face_shape", "Face shape", "Describe the overall shape of the person's face, if you remember it."),
     _q("eyes", "Eyes", "Describe the person's eyes, if you remember them."),

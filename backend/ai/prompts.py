@@ -9,7 +9,9 @@ ATTRIBUTE_SYSTEM_PROMPT = (
     "Reply with exactly one JSON object and nothing else. It must match this JSON schema:\n"
     f"{json.dumps(Attributes.model_json_schema())}\n"
     "Use short descriptive phrases (e.g. \"broad, slightly hooked\"). "
-    "Set a field to null when the witness did not mention it. Never invent features."
+    "Set a field to null when the witness did not mention it. Never invent features. "
+    "appearance is the ethnic or regional look the witness named (e.g. \"South Indian\"); never infer it "
+    "from skin colour or any other feature."
 )
 
 EDIT_SYSTEM_PROMPT = (
@@ -52,7 +54,8 @@ def build_coverage_request(free_recall: str, features: dict[str, str]) -> str:
 
 
 FEATURE_LABELS = [
-    ("gender", "Gender"), ("age_range", "Age"), ("skin_tone", "Skin"), ("face_shape", "Face shape"), ("jaw", "Jaw"),
+    ("gender", "Gender"), ("age_range", "Age"), ("appearance", "Ethnic appearance"),
+    ("skin_tone", "Skin"), ("face_shape", "Face shape"), ("jaw", "Jaw"),
     ("eyes", "Eyes"), ("eyebrows", "Eyebrows"), ("nose", "Nose"), ("mouth", "Mouth"), ("ears", "Ears"),
     ("hair", "Hair"), ("facial_hair", "Facial hair"), ("marks", "Marks"), ("accessories", "Accessories"),
     ("notes", "Other details"),
@@ -86,8 +89,8 @@ def build_image_prompt(a: Attributes, description: str | None = None) -> str:
     lines.append(
         "Drawn by hand by a forensic artist in about twenty minutes, in soft pencil on plain off-white paper: "
         "loose dark outlines, rough hatching for shadows, hair drawn as simple shaded shapes rather than single "
-        "strands, no skin texture, not photorealistic, slight natural asymmetry. A realistic, natural face that "
-        "follows the description closely; not idealised, not glamorised and not a model. Black and white only, "
+        "strands, no skin texture, not photorealistic, slight natural asymmetry. Draw exactly the face described, "
+        "neither more nor less attractive than the description says. Black and white only, "
         "no colour. Neutral expression, looking straight ahead, head and shoulders, plain shirt collar, plain background."
     )
     return " ".join(lines)
@@ -166,6 +169,7 @@ def build_body_prompt(a: Attributes, d: CaseDetails, from_sketch: bool = False) 
 def build_photo_prompt(a: Attributes) -> str:
     # the sketch carries shape but no colour, so colours come from the witness's attributes
     colours = [
+        f"ethnic appearance: {a.appearance}" if a.appearance else None,
         f"{a.skin_tone} skin" if a.skin_tone else None,
         f"eyes: {a.eyes}" if a.eyes else None,
         f"hair: {a.hair}" if a.hair else None,

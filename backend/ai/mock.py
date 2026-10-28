@@ -19,6 +19,7 @@ _EDIT_KEYWORDS = [
 
 _COVERAGE_KEYWORDS = {
     "age_gender": r"\b(\d{2}|twenty|thirty|forty|fifty|young|old|man|woman|male|female|boy|girl)\b",
+    "appearance": r"\b(indian|african|asian|european|arab|ethnic|looking)\b",
     "skin_tone": r"\b(skin|complexion)\b",
     "face_shape": r"\bface\b",
     "eyes": r"\beyes?\b",
