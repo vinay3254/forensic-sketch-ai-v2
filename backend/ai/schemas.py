@@ -35,3 +35,12 @@ class EditPlan(BaseModel):
     edits: list[Edit]
     reply: str
     needs_clarification: bool = False
+
+
+class CoverageQuote(BaseModel):
+    key: str
+    quote: str
+
+
+class Coverage(BaseModel):
+    covered: list[CoverageQuote]

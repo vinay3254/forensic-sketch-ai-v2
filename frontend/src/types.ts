@@ -118,6 +118,7 @@ export const AUDIT_ACTIONS = [
   'export',
   'make_photo',
   'interview_start',
+  'interview_assist',
   'interview_confirm',
   'audit_view',
   'access_denied',

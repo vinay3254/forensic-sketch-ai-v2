@@ -84,5 +84,8 @@ export const saveInterview = (caseId: number, id: number, draft: InterviewDraft)
   request<Interview>(`/api/cases/${caseId}/interviews/${id}`, { method: 'PUT', body: JSON.stringify(draft) })
 export const confirmInterview = (caseId: number, id: number) =>
   post<Interview>(`/api/cases/${caseId}/interviews/${id}/confirm`, { witness_confirmed: true })
+// Option B: feature key -> exact quotes from the saved free account
+export const assistInterview = (caseId: number, id: number) =>
+  post<{ covered: Record<string, string[]> }>(`/api/cases/${caseId}/interviews/${id}/assist`)
 export const generateFromInterview = (caseId: number, id: number) =>
   post<Version>(`/api/cases/${caseId}/interviews/${id}/generate`)

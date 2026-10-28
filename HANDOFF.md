@@ -26,7 +26,9 @@ Spec: `docs/superpowers/specs/2026-10-28-smart-witness-interview-design.md`. Bui
 | 5 | Optional extras step (facial hair, hairstyle, glasses, distinguishing features) | done |
 | 6 | Review & confirm (lock transcript, SHA-256 in audit) | done |
 | 7 | Generate sketch from confirmed interview (unknown → blank, uncertain flagged) | done |
-| 8 | Option B: AI marks features already covered, exact quotes only, off by default | **next, waiting for go-ahead** |
+| 8 | Option B: AI marks features already covered, exact quotes only, off by default | done |
+
+All eight interview features are built. AI assist is a checkbox on the free-account step (off by default); "Check the free account" calls `POST .../assist`, and each feature step then shows the witness's exact words for it. Live check: 5 features found, every quote verbatim, about 23 s.
 
 Sketches can be generated from a confirmed interview ("Confirm & generate sketch") or, as before, from the single description box on the case page.
 

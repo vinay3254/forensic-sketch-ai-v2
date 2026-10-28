@@ -4,7 +4,7 @@ import textwrap
 
 from PIL import Image, ImageDraw
 
-from backend.ai.schemas import Attributes, Edit, EditPlan
+from backend.ai.schemas import Attributes, Coverage, CoverageQuote, Edit, EditPlan
 
 _EDIT_KEYWORDS = [
     (r"\bjaw", "jaw"),
@@ -16,6 +16,22 @@ _EDIT_KEYWORDS = [
     (r"\b(beard|moustache|mustache|stubble)\b", "facial_hair"),
     (r"\bscar\b", "marks"),
 ]
+
+_COVERAGE_KEYWORDS = {
+    "age_gender": r"\b(\d{2}|twenty|thirty|forty|fifty|young|old|man|woman|male|female|boy|girl)\b",
+    "skin_tone": r"\b(skin|complexion)\b",
+    "face_shape": r"\bface\b",
+    "eyes": r"\beyes?\b",
+    "eyebrows": r"\beyebrows?\b",
+    "nose": r"\bnose\b",
+    "mouth": r"\b(mouth|lips?)\b",
+    "ears": r"\bears?\b",
+    "jaw_chin": r"\b(jaw|chin)\b",
+    "facial_hair": r"\b(beard|moustache|mustache|stubble)\b",
+    "hairstyle": r"\bhair\b",
+    "glasses_accessories": r"\b(glasses|spectacles|cap|hat|earrings?)\b",
+    "distinguishing_features": r"\b(scar|mole|tattoo|mark|birthmark)\b",
+}
 
 
 def _word(pattern: str, text: str) -> bool:
@@ -46,6 +62,17 @@ class MockAIClient:
                             needs_clarification=True)
         names = ", ".join(e.region.replace("_", " ") for e in edits)
         return EditPlan(edits=edits, reply=f"Updated the {names}.")
+
+    def find_coverage(self, free_recall: str, features: dict[str, str]) -> Coverage:
+        sentences = [s.strip() for s in re.split(r"[.!?;]", free_recall) if s.strip()]
+        return Coverage(
+            covered=[
+                CoverageQuote(key=key, quote=s)
+                for key in features
+                for s in sentences
+                if key in _COVERAGE_KEYWORDS and _word(_COVERAGE_KEYWORDS[key], s)
+            ]
+        )
 
     def _placeholder(self, prompt: str) -> bytes:
         img = Image.new("RGB", (1024, 1536), (128, 128, 128))

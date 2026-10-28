@@ -1,6 +1,6 @@
 import json
 
-from backend.ai.schemas import Attributes, Edit, EditPlan
+from backend.ai.schemas import Attributes, Coverage, Edit, EditPlan
 
 ATTRIBUTE_SYSTEM_PROMPT = (
     "You convert a witness's description of a person's face into structured attributes. "
@@ -20,6 +20,21 @@ EDIT_SYSTEM_PROMPT = (
     "If the request is too vague to act on, return no edits, set needs_clarification to true, "
     "and use reply to ask one specific question."
 )
+
+COVERAGE_SYSTEM_PROMPT = (
+    "You help an officer during a witness interview. Given the witness's free account and a list of facial "
+    "features (key: label), find the parts of the account that already describe each feature. "
+    "Reply with exactly one JSON object and nothing else. It must match this JSON schema:\n"
+    f"{json.dumps(Coverage.model_json_schema())}\n"
+    "Each quote must be copied character for character from the account: same words, spelling, case and "
+    "punctuation. Never paraphrase, correct, summarise or combine separate parts. Use only the given keys. "
+    "Leave a feature out if the account does not mention it. Never guess."
+)
+
+
+def build_coverage_request(free_recall: str, features: dict[str, str]) -> str:
+    keys = "\n".join(f"{k}: {label}" for k, label in features.items())
+    return f"Features:\n{keys}\n\nWitness's free account:\n{free_recall}"
 
 
 def build_image_prompt(a: Attributes) -> str:

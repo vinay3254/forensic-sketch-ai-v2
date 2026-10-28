@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { confirmInterview, generateFromInterview, getInterview, interviewQuestions, saveInterview } from '../api'
+import { assistInterview, confirmInterview, generateFromInterview, getInterview, interviewQuestions, saveInterview } from '../api'
 import AnswerBox, { MAX_TEXT } from '../components/AnswerBox'
 import InterviewReview from '../components/InterviewReview'
 import type { InputSource, InterviewDraft, RecallStatus } from '../types'
@@ -40,6 +40,7 @@ export default function InterviewPage() {
   const [step, setStep] = useState(0)
   const [lang, setLang] = useState('en-IN')
   const [loaded, setLoaded] = useState(false)
+  const [assistOn, setAssistOn] = useState(false) // Option B is off until the officer turns it on
   const dirty = useRef(false)
 
   // take the server copy once; after that local edits win and are autosaved
@@ -91,6 +92,16 @@ export default function InterviewPage() {
       queryClient.setQueryData(['interview', caseId, interviewId], iv)
       queryClient.invalidateQueries({ queryKey: ['interviews', caseId] })
       sketch.mutate()
+    },
+  })
+
+  // the server reads the saved free account, so save what is on screen first
+  const assist = useMutation({
+    mutationFn: async () => {
+      pending.current = null
+      await saveInterview(caseId, interviewId, draft)
+      const r = await assistInterview(caseId, interviewId)
+      return { covered: r.covered, freeRecall: draft.free_recall }
     },
   })
 
@@ -146,6 +157,10 @@ export default function InterviewPage() {
     })
   }
 
+  const covered = assistOn ? (assist.data?.covered ?? {}) : {}
+  const quotes = question ? (covered[question.key] ?? []) : []
+  const assistStale = !!assist.data && assist.data.freeRecall !== freeRecall
+
   const saveLabel = save.isPending ? 'Saving…' : save.isError ? 'Not saved: ' + save.error.message : save.isSuccess ? 'All changes saved' : ''
 
   return (
@@ -183,6 +198,11 @@ export default function InterviewPage() {
                 >
                   <span className="w-5 text-xs opacity-60">{i + 1}</span>
                   <span className="flex-1">{q.label}</span>
+                  {i > 0 && covered[q.key] && (
+                    <span title="Mentioned in the free account" className="text-[10px] font-medium uppercase opacity-70">
+                      said
+                    </span>
+                  )}
                   {dot ? (
                     <span className={`size-2.5 rounded-full ${dot}`} />
                   ) : (
@@ -236,6 +256,19 @@ export default function InterviewPage() {
               <p className="mt-1 text-lg">“{question ? question.prompt : free.prompt}”</p>
             </div>
             {!question && <p className="rounded bg-blue-50 p-3 text-sm text-blue-900">{free.guidance}</p>}
+            {question && quotes.length > 0 && (
+              <div className="rounded border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-950">
+                <p className="text-xs font-medium uppercase tracking-wide text-indigo-700">
+                  Already in the free account{assistStale && ' (free account changed since this check)'}
+                </p>
+                <ul className="mt-1 space-y-1">
+                  {quotes.map((q) => (
+                    <li key={q}>“{q}”</li>
+                  ))}
+                </ul>
+                <p className="mt-1 text-xs text-indigo-700">The witness's exact words. Still ask the question; do not read these back.</p>
+              </div>
+            )}
 
             <AnswerBox
               key={step}
@@ -248,6 +281,38 @@ export default function InterviewPage() {
               onType={(text) => write('typed', () => text)}
               onDictate={(phrase) => write('speech', (text) => append(text, phrase))}
             />
+
+            {!question && !locked && (
+              <div className="rounded border border-slate-200 p-3 text-sm">
+                <label className="flex items-center gap-2">
+                  <input type="checkbox" checked={assistOn} onChange={(e) => setAssistOn(e.target.checked)} />
+                  <span className="font-medium">AI assist</span>
+                  <span className="text-slate-500">: mark which features the free account already covers (optional)</span>
+                </label>
+                {assistOn && (
+                  <div className="mt-2 flex flex-wrap items-center gap-3">
+                    <button
+                      onClick={() => assist.mutate()}
+                      disabled={assist.isPending || !freeRecall.trim()}
+                      className="rounded border border-slate-300 px-3 py-1.5 hover:bg-slate-50 disabled:opacity-50"
+                    >
+                      {assist.isPending ? 'Checking…' : assist.data ? 'Check again' : 'Check the free account'}
+                    </button>
+                    {assist.data && !assist.isPending && (
+                      <span className="text-slate-600">
+                        {Object.keys(assist.data.covered).length === 0
+                          ? 'No features found in the free account.'
+                          : `Found: ${Object.keys(assist.data.covered).map((k) => questions.find((q) => q.key === k)?.label ?? k).join(', ')}.`}
+                        {assistStale && ' The free account has changed since.'}
+                      </span>
+                    )}
+                    {assist.isError && (
+                      <span className="text-red-700">AI assist is unavailable ({assist.error.message}). Carry on with the questions.</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {question && (
               <div>

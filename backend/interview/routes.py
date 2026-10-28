@@ -12,6 +12,7 @@ from backend.cases.routes import VersionOut
 from backend.db import get_session
 from backend.errors import AppError
 from backend.face import service as face_service
+from backend.interview.assist import find_coverage
 from backend.interview.questions import EXTRAS, FEATURES, FREE_RECALL, PROMPTS
 from backend.interview.transcript import has_content, in_question_order, transcript_hash
 from backend.models import Case, Interview, User, utcnow
@@ -130,6 +131,34 @@ def save_draft(
     session.commit()
     session.refresh(iv)
     return InterviewOut(**iv.model_dump())
+
+
+class AssistOut(BaseModel):
+    covered: dict[str, list[str]]  # feature key -> exact quotes from the free account
+
+
+@router.post("/api/cases/{case_id}/interviews/{interview_id}/assist", response_model=AssistOut)
+def assist(
+    interview_id: int,
+    request: Request,
+    case: Case = Depends(require_case_access),
+    user: User = Depends(current_user),
+    session: Session = Depends(get_session),
+    ai: AIClient = Depends(get_ai_client),
+):
+    """Option B, off by default in the UI: point at the parts of the free account that already cover
+    each feature. Nothing is stored; an AI failure leaves the interview as it was."""
+    iv = interview_of_case(session, case, interview_id)
+    if iv.status != "draft":
+        raise AppError("CONFLICT", "This interview has been confirmed and can no longer be changed.", 409)
+    if not iv.free_recall.strip():
+        raise AppError("VALIDATION", "Record the witness's free account first.", 422)
+    covered = find_coverage(ai, iv.free_recall)
+    record(
+        session, request, "interview_assist", user, case_id=case.id,
+        detail={"interview_id": iv.id, "keys": list(covered)},
+    )
+    return AssistOut(covered=covered)
 
 
 @router.post("/api/cases/{case_id}/interviews/{interview_id}/confirm", response_model=InterviewOut)

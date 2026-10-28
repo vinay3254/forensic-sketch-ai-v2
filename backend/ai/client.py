@@ -9,8 +9,8 @@ import openai
 from fastapi import Request
 from pydantic import BaseModel, ValidationError
 
-from backend.ai.prompts import ATTRIBUTE_SYSTEM_PROMPT, EDIT_SYSTEM_PROMPT
-from backend.ai.schemas import Attributes, EditPlan
+from backend.ai.prompts import ATTRIBUTE_SYSTEM_PROMPT, COVERAGE_SYSTEM_PROMPT, EDIT_SYSTEM_PROMPT, build_coverage_request
+from backend.ai.schemas import Attributes, Coverage, EditPlan
 from backend.config import Settings
 from backend.errors import AppError
 
@@ -24,6 +24,7 @@ M = TypeVar("M", bound=BaseModel)
 class AIClient(Protocol):
     def extract_attributes(self, text: str) -> Attributes: ...
     def parse_edit(self, message: str, current: Attributes) -> EditPlan: ...
+    def find_coverage(self, free_recall: str, features: dict[str, str]) -> Coverage: ...
     def generate_image(self, prompt: str) -> bytes: ...
     def edit_image(self, image: bytes, prompt: str) -> bytes: ...
 
@@ -108,6 +109,9 @@ class LiveAIClient:
     def parse_edit(self, message: str, current: Attributes) -> EditPlan:
         user = f"Current attributes:\n{current.model_dump_json()}\n\nWitness request:\n{message}"
         return self._structured(EDIT_SYSTEM_PROMPT, user, EditPlan)
+
+    def find_coverage(self, free_recall: str, features: dict[str, str]) -> Coverage:
+        return self._structured(COVERAGE_SYSTEM_PROMPT, build_coverage_request(free_recall, features), Coverage)
 
     def _image_bytes(self, resp) -> bytes:
         try:
