@@ -50,7 +50,7 @@ export default function FaceCanvas({ versions, version, view, busy, onView, onSe
             alt={`Version ${version.version_no}`}
             className="aspect-[2/3] w-[min(100cqw,66.6cqh)] rounded-[14px] object-cover shadow-[0_1px_0_rgba(0,0,0,0.04),0_18px_40px_-20px_rgba(40,30,10,0.35)]"
           />
-        ) : (
+        ) : busy ? null : (
           <p className="max-w-60 text-center text-[13px] text-muted">Enter the witness description, or start a witness interview, to draw the first sketch.</p>
         )}
         {busy && (

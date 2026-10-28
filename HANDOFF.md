@@ -10,15 +10,19 @@ Status of SketchLab as of 2026-10-28. Branch `main` (the only branch), remote `o
 - Realistic photo from any sketch version (made once per version, then reused).
 - Export sketch and photo as PNG (2048 px, footer with case, version, time, user).
 - Audit log with SHA-256 hash chain, admin filters, "Verify integrity".
-- Tests: `uv run pytest -q` → 265 passed. `npm run build` passes.
+- Tests: `uv run pytest -q` → 279 passed. `npm run build` passes.
 - Live AI check (Codex models) passed: generate, refine, realistic photo, both exports.
 
-## Light UI and navigation (2026-10-28)
+## Light UI, navigation and sketch theme (2026-10-28)
 
-- Seto-style light glass frame (gradient background, light sidebar with `lucide-react` icons).
+- Layout follows a Seto-style reference: light frame, sidebar with `lucide-react` icons, rounded cards, composer, history rail.
+- Colours follow a sketch theme (`frontend/src/index.css` `@theme`): graphite pencil on warm drawing paper with a grain, paper-white cards with graphite hairlines, one red-pencil accent (`accent`). The older pages' `slate`/`blue` classes are remapped there to graphite/red pencil.
 - Home (`/cases`): welcome, three action cards, a composer (typed or dictated description creates a case and pre-fills the workspace form; generating stays a click), and a case-history rail with search, latest-sketch thumbnails (`latest_image_url`, `version_count` on `GET /api/cases`) and quick links to each case page.
 - Moving around: a case bar on every case page (Sketch · Details · Interview · Case sheet, Alt+1…4), Ctrl/⌘K jump-to palette (cases, their pages, New case, Home, Audit), recent cases in the sidebar, and cases reopen on the page last used (browser `localStorage`, per device). `/cases/:id/interview` opens the draft or latest interview, or offers to start one.
-- Still in the older styling: interview, audit and login pages.
+- Still in the older layout (new colours only): interview, audit and login pages.
+- Refine suggestion chips were removed at the user's request.
+- Dev servers for this checkout: backend `--port 8001` with `FRONTEND_ORIGIN=http://localhost:5174`, frontend `BACKEND_URL=http://localhost:8001 npx vite --port 5174` (ports 8000/5173 were held by another session's stack).
+- Two untracked files from a stopped parallel session, unused: `frontend/src/components/Icon.tsx`, `docs/superpowers/plans/2026-10-28-dashboard-refresh.md`. Delete them if nobody needs them.
 
 ## Smart Witness Interview (in progress)
 
@@ -49,6 +53,7 @@ Sketches can be generated from a confirmed interview ("Confirm & generate sketch
 
 ## Known issues
 
+- Left/right from the witness's point of view is not pinned down: "small mole above the left lip" was drawn on the viewer's left (the person's right). Witnesses usually mean the person's own left; the image prompt should say so.
 - Refined attribute text repeats itself (e.g. `"light stubble, thin moustache with light stubble"`): `apply_edits` appends the change to the old value instead of replacing it.
 - Edits to unmapped regions (jaw, face shape, facial hair, marks) still redraw the whole sketch, so they can change more than asked.
 - Each thumbnail load writes an `image_view` audit row, so the log fills quickly.
@@ -90,6 +95,13 @@ Done. Refines keep the change inside the edited regions and paste the previous s
 ## Sketch style
 
 The image prompt asks for a rough, hand-drawn composite of an ordinary face (loose outlines, hatching, hair as shaded shapes, not idealised), and edits keep that line style. A photocopy-style post-process ("scanned" finish) was tried and dropped in favour of the plain model output.
+
+## Next (agreed, not started)
+
+1. **Suspect matching (CPU)**: InsightFace `buffalo_l` via ONNX Runtime (like the face parser), admin-managed face set stored in SQLite (512-d embeddings, plain cosine search), search from a version's realistic photo, top-5 "possible leads" with scores and a cut-off ("no strong match" below it), every search audited. Needs a short design first. Demo face set only (CUFS under its research licence, or AI-generated faces); `buffalo_l` weights are non-commercial.
+2. **Docker Compose** so `docker compose up` runs backend + frontend identically on either laptop.
+
+Decided against: CodeFormer/GFPGAN on exports (adds invented photo detail to sketches/photos), local SDXL/ControlNet on a 6 GB GPU, DECA/3DDFA for 3D, and a GPU worker on the second laptop (also 6 GB VRAM, so no gain).
 
 ## Ideas discussed, not built
 

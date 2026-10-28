@@ -85,6 +85,7 @@ export default function WorkspacePage() {
         setStartingOver(false)
         setView(action.kind === 'photo' ? 'photo' : 'sketch')
       }
+      queryClient.invalidateQueries({ queryKey: ['cases'] })
       return queryClient.invalidateQueries({ queryKey: ['case', caseId] })
     },
   })

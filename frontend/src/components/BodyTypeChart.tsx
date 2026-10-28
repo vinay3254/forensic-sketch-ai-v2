@@ -23,7 +23,7 @@ export default function BodyTypeChart({ build, onPick, compact }: Props) {
             isBuild(build, t.label) ? 'border-accent text-ink' : 'border-transparent text-body hover:border-line'
           }`}
         >
-          <img src={t.image_url} alt={t.label} className={`${compact ? 'h-[70px]' : 'h-[87px]'} object-contain mix-blend-multiply`} />
+          <img src={t.image_url} alt={t.label} className={`${compact ? 'h-[70px]' : 'h-[87px]'} object-contain`} />
           {t.label}
         </button>
       ))}
