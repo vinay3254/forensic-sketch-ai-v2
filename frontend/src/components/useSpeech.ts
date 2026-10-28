@@ -65,8 +65,10 @@ export function useSpeech(lang: string, onFinal: (text: string) => void) {
       let pending = ''
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const res = e.results[i]
-        if (res.isFinal) finalRef.current(res[0].transcript.trim())
-        else pending += res[0].transcript
+        const phrase = res[0].transcript.trim()
+        if (res.isFinal) {
+          if (phrase) finalRef.current(phrase) // Chrome sometimes finalises silence as ""
+        } else pending += res[0].transcript
       }
       setInterim(pending)
     }
@@ -83,8 +85,14 @@ export function useSpeech(lang: string, onFinal: (text: string) => void) {
     setListening(true)
   }, [lang])
 
-  // never keep the microphone open after leaving the question
-  useEffect(() => () => rec.current?.stop(), [])
+  // never keep the microphone open after leaving the question, and drop any late results
+  useEffect(
+    () => () => {
+      if (rec.current) rec.current.onresult = null
+      rec.current?.stop()
+    },
+    [],
+  )
 
   return { listening, interim, error, start, stop }
 }

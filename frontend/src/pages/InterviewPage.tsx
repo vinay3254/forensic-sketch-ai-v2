@@ -1,8 +1,9 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { getInterview, interviewQuestions, saveInterview } from '../api'
+import { confirmInterview, getInterview, interviewQuestions, saveInterview } from '../api'
 import AnswerBox, { MAX_TEXT } from '../components/AnswerBox'
+import InterviewReview from '../components/InterviewReview'
 import type { InputSource, InterviewDraft, RecallStatus } from '../types'
 
 const SAVE_DELAY_MS = 800
@@ -24,6 +25,7 @@ const append = (text: string, phrase: string) => (text && !/\s$/.test(text) ? `$
 export default function InterviewPage() {
   const caseId = Number(useParams().id)
   const interviewId = Number(useParams().iid)
+  const queryClient = useQueryClient()
   const bank = useQuery({ queryKey: ['interview-questions'], queryFn: interviewQuestions, staleTime: Infinity })
   const interview = useQuery({
     queryKey: ['interview', caseId, interviewId],
@@ -41,12 +43,14 @@ export default function InterviewPage() {
 
   // take the server copy once; after that local edits win and are autosaved
   useEffect(() => {
-    if (!interview.data || loaded) return
+    if (!interview.data || !bank.data || loaded) return
     setFreeRecall(interview.data.free_recall)
     setFreeSource(interview.data.free_recall_source)
     setEntries(Object.fromEntries(interview.data.answers.map((a) => [a.key, { answer: a.answer, status: a.status, source: a.source }])))
+    // a confirmed interview opens on its transcript
+    if (interview.data.status !== 'draft') setStep(bank.data.features.length + bank.data.extras.length + 1)
     setLoaded(true)
-  }, [interview.data, loaded])
+  }, [interview.data, bank.data, loaded])
 
   const save = useMutation({
     mutationFn: (draft: InterviewDraft) => saveInterview(caseId, interviewId, draft),
@@ -74,6 +78,20 @@ export default function InterviewPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draftJson, loaded])
 
+  const confirm = useMutation({
+    mutationFn: async () => {
+      // save exactly what is on screen first, so the hash covers what the witness just reviewed
+      pending.current = null
+      await saveInterview(caseId, interviewId, draft)
+      return confirmInterview(caseId, interviewId)
+    },
+    onSuccess: (iv) => {
+      dirty.current = false
+      queryClient.setQueryData(['interview', caseId, interviewId], iv)
+      queryClient.invalidateQueries({ queryKey: ['interviews', caseId] })
+    },
+  })
+
   // leaving the page inside the save delay would otherwise drop the last keystrokes
   useEffect(
     () => () => {
@@ -91,9 +109,10 @@ export default function InterviewPage() {
   const { free_recall: free, features, extras } = bank.data
   const questions = [...features, ...extras]
   const firstExtra = features.length + 1
-  const locked = interview.data.status !== 'draft'
-  const total = questions.length + 1
-  const question = step === 0 ? null : questions[step - 1]
+  const locked = interview.data.status !== 'draft' || confirm.isPending
+  const reviewStep = questions.length + 1
+  const total = questions.length + 2
+  const question = step === 0 || step === reviewStep ? null : questions[step - 1]
   const entry: Entry = question ? (entries[question.key] ?? { answer: '', status: null, source: null }) : { answer: freeRecall, status: null, source: freeSource }
 
   function setStatus(status: RecallStatus | null) {
@@ -130,7 +149,7 @@ export default function InterviewPage() {
         <span className={`ml-auto text-sm ${save.isError ? 'text-red-600' : 'text-slate-500'}`}>{saveLabel}</span>
       </div>
 
-      {locked && (
+      {interview.data.status !== 'draft' && step !== reviewStep && (
         <p className="rounded bg-slate-200 p-3 text-sm">This interview has been confirmed and is read-only.</p>
       )}
 
@@ -162,79 +181,109 @@ export default function InterviewPage() {
               </div>
             )
           })}
+          <button
+            onClick={() => setStep(reviewStep)}
+            className={`mt-2 flex w-full items-center gap-2 rounded border-t px-3 py-2 text-left text-sm font-medium ${step === reviewStep ? 'bg-slate-900 text-white' : 'hover:bg-slate-100'}`}
+          >
+            <span className="w-5 text-xs opacity-60">✓</span>
+            <span className="flex-1">Review &amp; confirm</span>
+            {interview.data.status !== 'draft' && <span className="text-xs">locked</span>}
+          </button>
         </nav>
 
-        <section className="space-y-4 rounded-lg bg-white p-6 shadow">
-          <p className="text-xs uppercase tracking-wide text-slate-500">
-            Step {step + 1} of {total} · {question ? question.label : free.label}
-            {question?.optional && ' · optional'}
-          </p>
-          {question?.optional && step === firstExtra && (
-            <p className="rounded bg-slate-50 p-3 text-sm text-slate-600">
-              These last questions are optional. Ask them only if the witness is comfortable, and skip any they have nothing to add to.
+        {step === reviewStep ? (
+          <section className="rounded-lg bg-white p-6 shadow">
+            <p className="mb-4 text-xs uppercase tracking-wide text-slate-500">Step {total} of {total} · Review &amp; confirm</p>
+            <InterviewReview
+              freePrompt={free.prompt}
+              freeRecall={freeRecall}
+              freeSource={freeSource}
+              questions={questions}
+              entries={entries}
+              interview={interview.data}
+              confirming={confirm.isPending}
+              error={confirm.error?.message ?? null}
+              onEdit={setStep}
+              onConfirm={() => confirm.mutate()}
+            />
+          </section>
+        ) : (
+          <section className="space-y-4 rounded-lg bg-white p-6 shadow">
+            <p className="text-xs uppercase tracking-wide text-slate-500">
+              Step {step + 1} of {total} · {question ? question.label : free.label}
+              {question?.optional && ' · optional'}
             </p>
-          )}
-          <div className="rounded-lg border-l-4 border-slate-900 bg-slate-50 p-4">
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Read aloud</p>
-            <p className="mt-1 text-lg">“{question ? question.prompt : free.prompt}”</p>
-          </div>
-          {!question && <p className="rounded bg-blue-50 p-3 text-sm text-blue-900">{free.guidance}</p>}
-
-          <AnswerBox
-            key={step}
-            value={entry.answer}
-            source={entry.source}
-            rows={question ? 4 : 9}
-            disabled={locked}
-            lang={lang}
-            onLang={setLang}
-            onType={(text) => write('typed', () => text)}
-            onDictate={(phrase) => write('speech', (text) => append(text, phrase))}
-          />
-
-          {question && (
-            <div>
-              <p className="mb-2 text-sm font-medium">How sure is the witness?</p>
-              <div className="flex flex-wrap gap-2">
-                {STATUSES.map((s) => (
-                  <button
-                    key={s.value}
-                    title={s.hint}
-                    disabled={locked}
-                    onClick={() => setStatus(entry.status === s.value ? null : s.value)}
-                    className={`rounded border px-4 py-2 text-sm disabled:opacity-50 ${entry.status === s.value ? s.on : 'border-slate-300 hover:bg-slate-50'}`}
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-              {entry.status === 'unknown' && (
-                <p className="mt-2 text-xs text-slate-500">This will be left out of the sketch. Nothing will be guessed.</p>
-              )}
+            {question?.optional && step === firstExtra && (
+              <p className="rounded bg-slate-50 p-3 text-sm text-slate-600">
+                These last questions are optional. Ask them only if the witness is comfortable, and skip any they have nothing to add to.
+              </p>
+            )}
+            <div className="rounded-lg border-l-4 border-slate-900 bg-slate-50 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Read aloud</p>
+              <p className="mt-1 text-lg">“{question ? question.prompt : free.prompt}”</p>
             </div>
-          )}
+            {!question && <p className="rounded bg-blue-50 p-3 text-sm text-blue-900">{free.guidance}</p>}
 
-          <div className="flex items-center border-t pt-4">
-            <button onClick={() => setStep(step - 1)} disabled={step === 0} className="rounded px-4 py-2 text-sm hover:bg-slate-100 disabled:opacity-40">
-              ← Back
-            </button>
-            {question?.optional && step < total - 1 && (
-              <button onClick={() => setStep(total - 1)} className="ml-auto rounded px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">
-                Skip remaining optional questions
-              </button>
+            <AnswerBox
+              key={step}
+              value={entry.answer}
+              source={entry.source}
+              rows={question ? 4 : 9}
+              disabled={locked}
+              lang={lang}
+              onLang={setLang}
+              onType={(text) => write('typed', () => text)}
+              onDictate={(phrase) => write('speech', (text) => append(text, phrase))}
+            />
+
+            {question && (
+              <div>
+                <p className="mb-2 text-sm font-medium">How sure is the witness?</p>
+                <div className="flex flex-wrap gap-2">
+                  {STATUSES.map((s) => (
+                    <button
+                      key={s.value}
+                      title={s.hint}
+                      disabled={locked}
+                      onClick={() => setStatus(entry.status === s.value ? null : s.value)}
+                      className={`rounded border px-4 py-2 text-sm disabled:opacity-50 ${entry.status === s.value ? s.on : 'border-slate-300 hover:bg-slate-50'}`}
+                    >
+                      {s.label}
+                    </button>
+                  ))}
+                </div>
+                {entry.status === 'unknown' && (
+                  <p className="mt-2 text-xs text-slate-500">This will be left out of the sketch. Nothing will be guessed.</p>
+                )}
+              </div>
             )}
-            {step < total - 1 ? (
-              <button
-                onClick={() => setStep(step + 1)}
-                className={`${question?.optional ? 'ml-2' : 'ml-auto'} rounded bg-slate-900 px-4 py-2 text-sm text-white`}
-              >
-                {step === firstExtra - 1 ? 'Next: optional questions →' : question?.optional ? 'Next / skip →' : 'Next →'}
+
+            <div className="flex items-center border-t pt-4">
+              <button onClick={() => setStep(step - 1)} disabled={step === 0} className="rounded px-4 py-2 text-sm hover:bg-slate-100 disabled:opacity-40">
+                ← Back
               </button>
-            ) : (
-              <span className="ml-auto text-sm text-slate-500">All questions done.</span>
-            )}
-          </div>
-        </section>
+              {question?.optional && step < reviewStep - 1 && (
+                <button onClick={() => setStep(reviewStep)} className="ml-auto rounded px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">
+                  Skip to review
+                </button>
+              )}
+              {step < reviewStep ? (
+                <button
+                  onClick={() => setStep(step + 1)}
+                  className={`${question?.optional ? 'ml-2' : 'ml-auto'} rounded bg-slate-900 px-4 py-2 text-sm text-white`}
+                >
+                  {step === firstExtra - 1
+                    ? 'Next: optional questions →'
+                    : step === reviewStep - 1
+                      ? 'Review & confirm →'
+                      : question?.optional
+                        ? 'Next / skip →'
+                        : 'Next →'}
+                </button>
+              ) : null}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   )

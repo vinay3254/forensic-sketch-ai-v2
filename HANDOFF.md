@@ -24,8 +24,8 @@ Spec: `docs/superpowers/specs/2026-10-28-smart-witness-interview-design.md`. Bui
 | 3 | Interview screens: free account + feature steps, statuses, autosave | done (`aa0f750`) |
 | 4 | Speech-to-text (browser Web Speech API, `en-IN` default; en-US, Hindi, Kannada) | done |
 | 5 | Optional extras step (facial hair, hairstyle, glasses, distinguishing features) | done |
-| 6 | Review & confirm (lock transcript, SHA-256 in audit) | **next, waiting for go-ahead** |
-| 7 | Generate sketch from confirmed interview (unknown → blank, uncertain flagged) | not started |
+| 6 | Review & confirm (lock transcript, SHA-256 in audit) | done |
+| 7 | Generate sketch from confirmed interview (unknown → blank, uncertain flagged) | **next, waiting for go-ahead** |
 | 8 | Option B: AI marks features already covered, exact quotes only, off by default | not started |
 
 Until feature 7 lands, sketches are still generated from the old single description box, which sits under the interview bar on the case page.

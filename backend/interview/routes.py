@@ -10,7 +10,8 @@ from backend.auth.deps import current_user, require_case_access
 from backend.db import get_session
 from backend.errors import AppError
 from backend.interview.questions import EXTRAS, FEATURES, FREE_RECALL, PROMPTS
-from backend.models import Case, Interview, User
+from backend.interview.transcript import has_content, in_question_order, transcript_hash
+from backend.models import Case, Interview, User, utcnow
 
 router = APIRouter(tags=["interview"])
 
@@ -45,6 +46,10 @@ class DraftIn(BaseModel):
         if len(keys) != len(set(keys)):
             raise ValueError("each question can be answered only once")
         return answers
+
+
+class ConfirmIn(BaseModel):
+    witness_confirmed: Literal[True]  # the officer ticks this after reading the transcript back to the witness
 
 
 class InterviewOut(BaseModel):
@@ -112,11 +117,42 @@ def save_draft(
         raise AppError("CONFLICT", "This interview has been confirmed and can no longer be changed.", 409)
     iv.free_recall = body.free_recall
     iv.free_recall_source = body.free_recall_source
-    iv.answers = [
-        {"key": a.key, "prompt": PROMPTS[a.key], "answer": a.answer, "status": a.status, "source": a.source}
-        for a in body.answers
-    ]
+    iv.answers = in_question_order(
+        [
+            {"key": a.key, "prompt": PROMPTS[a.key], "answer": a.answer, "status": a.status, "source": a.source}
+            for a in body.answers
+        ]
+    )
     session.add(iv)
     session.commit()
     session.refresh(iv)
+    return InterviewOut(**iv.model_dump())
+
+
+@router.post("/api/cases/{case_id}/interviews/{interview_id}/confirm", response_model=InterviewOut)
+def confirm(
+    interview_id: int,
+    body: ConfirmIn,
+    request: Request,
+    case: Case = Depends(require_case_access),
+    user: User = Depends(current_user),
+    session: Session = Depends(get_session),
+):
+    """The witness has reviewed the transcript: lock it and put its fingerprint on the audit chain."""
+    iv = interview_of_case(session, case, interview_id)
+    if iv.status != "draft":
+        raise AppError("CONFLICT", "This interview has already been confirmed.", 409)
+    if not has_content(iv.model_dump()):
+        raise AppError("VALIDATION", "Record at least the free account or one answer before confirming.", 422)
+    iv.transcript_hash = transcript_hash(iv.model_dump())
+    iv.status = "confirmed"
+    iv.confirmed_by = user.id
+    iv.confirmed_at = utcnow()
+    session.add(iv)
+    session.commit()
+    session.refresh(iv)
+    record(
+        session, request, "interview_confirm", user, case_id=case.id,
+        detail={"interview_id": iv.id, "transcript_hash": iv.transcript_hash},
+    )
     return InterviewOut(**iv.model_dump())

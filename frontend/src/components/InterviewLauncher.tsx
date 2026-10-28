@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { listInterviews, startInterview } from '../api'
 
 export default function InterviewLauncher({ caseId }: { caseId: number }) {
@@ -10,6 +10,7 @@ export default function InterviewLauncher({ caseId }: { caseId: number }) {
     onSuccess: (iv) => navigate(`/cases/${caseId}/interviews/${iv.id}`),
   })
   const draft = interviews?.find((iv) => iv.status === 'draft')
+  const confirmed = interviews?.filter((iv) => iv.status === 'confirmed') ?? []
 
   return (
     <div className="flex items-center gap-4 rounded-lg bg-white p-4 shadow">
@@ -18,6 +19,19 @@ export default function InterviewLauncher({ caseId }: { caseId: number }) {
         <p className="text-sm text-slate-500">
           Guided, non-leading questions. The witness's own words are kept exactly as given.
         </p>
+        {confirmed.length > 0 && (
+          <p className="mt-1 text-sm">
+            Confirmed:{' '}
+            {confirmed.map((iv, i) => (
+              <span key={iv.id}>
+                {i > 0 && ', '}
+                <Link to={`/cases/${caseId}/interviews/${iv.id}`} className="text-blue-700 hover:underline">
+                  interview #{iv.id}
+                </Link>
+              </span>
+            ))}
+          </p>
+        )}
       </div>
       <div className="ml-auto flex items-center gap-2">
         {draft && (

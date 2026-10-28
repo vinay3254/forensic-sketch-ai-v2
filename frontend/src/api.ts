@@ -82,3 +82,5 @@ export const startInterview = (caseId: number) => post<Interview>(`/api/cases/${
 export const getInterview = (caseId: number, id: number) => request<Interview>(`/api/cases/${caseId}/interviews/${id}`)
 export const saveInterview = (caseId: number, id: number, draft: InterviewDraft) =>
   request<Interview>(`/api/cases/${caseId}/interviews/${id}`, { method: 'PUT', body: JSON.stringify(draft) })
+export const confirmInterview = (caseId: number, id: number) =>
+  post<Interview>(`/api/cases/${caseId}/interviews/${id}/confirm`, { witness_confirmed: true })
