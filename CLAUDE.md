@@ -48,4 +48,4 @@ Config comes from `.env` (see `.env.example`). `JWT_SECRET` must be ≥32 chars 
 
 - Build multi-feature work one feature at a time: test (TDD, failing test first), verify live/in the browser, commit, push, then stop and wait for the user's go-ahead before the next feature.
 - Do not add `Co-Authored-By: Claude` trailers or "Generated with Claude Code" lines to commits or PRs.
-- Work happens on branch `backend`; remote `origin` is `vinay3254/forensic-sketch-ai-v2`.
+- Work happens on branch `main` (the only branch); remote `origin` is `vinay3254/forensic-sketch-ai-v2`.

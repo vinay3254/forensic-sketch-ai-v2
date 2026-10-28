@@ -1,6 +1,6 @@
 # Handoff
 
-Status of SketchLab as of 2026-10-28. Branch `backend`, remote `origin` = `vinay3254/forensic-sketch-ai-v2` (private). Nothing is merged to `main` yet.
+Status of SketchLab as of 2026-10-28. Branch `main` (the only branch), remote `origin` = `vinay3254/forensic-sketch-ai-v2` (private).
 
 ## Working
 
