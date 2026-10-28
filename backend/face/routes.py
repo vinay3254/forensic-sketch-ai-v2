@@ -105,3 +105,38 @@ def image(
     path = service.existing_image_file(request.app.state.settings, v.image_path)
     record(session, request, "image_view", user, case_id=case.id, version_id=v.id)
     return FileResponse(path, media_type="image/png")
+
+
+@router.post("/versions/{version_id}/photo", response_model=VersionOut)
+def make_photo(
+    version_id: int,
+    request: Request,
+    case: Case = Depends(require_case_access),
+    user: User = Depends(current_user),
+    session: Session = Depends(get_session),
+    ai: AIClient = Depends(get_ai_client),
+):
+    v = version_of_case(session, case, version_id)
+    try:
+        v = service.make_photo(session, ai, request.app.state.settings, v)
+    except AppError as e:
+        record(session, request, "make_photo", user, case_id=case.id, version_id=v.id, detail={"outcome": e.code})
+        raise
+    record(session, request, "make_photo", user, case_id=case.id, version_id=v.id, detail={"outcome": "ok"})
+    return VersionOut.of(v)
+
+
+@router.get("/versions/{version_id}/photo")
+def photo(
+    version_id: int,
+    request: Request,
+    case: Case = Depends(require_case_access),
+    user: User = Depends(current_user),
+    session: Session = Depends(get_session),
+):
+    v = version_of_case(session, case, version_id)
+    if not v.photo_path:
+        raise AppError("NOT_FOUND", "No realistic photo has been made for this version yet.", 404)
+    path = service.existing_image_file(request.app.state.settings, v.photo_path)
+    record(session, request, "image_view", user, case_id=case.id, version_id=v.id, detail={"kind": "photo"})
+    return FileResponse(path, media_type="image/png")

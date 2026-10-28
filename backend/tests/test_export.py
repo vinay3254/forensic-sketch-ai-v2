@@ -12,6 +12,7 @@ def make_version(client, login):
 
 def test_photo_export_is_2048_long_side_plus_footer(client, seed_users, login):
     cid, v = make_version(client, login)
+    client.post(f"/api/cases/{cid}/versions/{v['id']}/photo")
     r = client.get(f"/api/cases/{cid}/versions/{v['id']}/export?style=photo")
     assert r.status_code == 200 and "attachment" in r.headers["content-disposition"]
     assert "_v1_photo.png" in r.headers["content-disposition"]
@@ -42,3 +43,9 @@ def test_other_officer_cannot_export(client, seed_users, login):
     cid, v = make_version(client, login)
     login(client, "officer2", "officer2pass")
     assert client.get(f"/api/cases/{cid}/versions/{v['id']}/export?style=photo").status_code == 403
+
+
+def test_photo_export_before_photo_is_made_is_409(client, seed_users, login):
+    cid, v = make_version(client, login)
+    r = client.get(f"/api/cases/{cid}/versions/{v['id']}/export?style=photo")
+    assert r.status_code == 409 and r.json()["error"]["code"] == "CONFLICT"

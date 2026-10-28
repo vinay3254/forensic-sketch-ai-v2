@@ -10,6 +10,7 @@ from sqlmodel import Session
 from backend.audit.logger import record
 from backend.auth.deps import current_user, require_case_access
 from backend.db import get_session
+from backend.errors import AppError
 from backend.export.render import stamp_footer, to_sketch, upscale
 from backend.face.routes import version_of_case
 from backend.face.service import existing_image_file
@@ -28,9 +29,13 @@ def export(
     session: Session = Depends(get_session),
 ):
     v = version_of_case(session, case, version_id)
-    img = upscale(Image.open(existing_image_file(request.app.state.settings, v.image_path)).convert("RGB"))
-    if style == "sketch":
-        img = to_sketch(img)
+    settings = request.app.state.settings
+    if style == "photo":
+        if not v.photo_path:
+            raise AppError("CONFLICT", "Make a realistic photo of this version first.", 409)
+        img = upscale(Image.open(existing_image_file(settings, v.photo_path)).convert("RGB"))
+    else:
+        img = to_sketch(upscale(Image.open(existing_image_file(settings, v.image_path))))
     exported_at = datetime.now(UTC).isoformat(timespec="seconds")
     img = stamp_footer(
         img,

@@ -37,6 +37,7 @@ class VersionOut(BaseModel):
     attributes: dict
     created_at: datetime
     image_url: str
+    photo_url: str | None
 
     @classmethod
     def of(cls, v: FaceVersion) -> "VersionOut":
@@ -48,6 +49,7 @@ class VersionOut(BaseModel):
             attributes=v.attributes,
             created_at=v.created_at,
             image_url=f"/api/cases/{v.case_id}/versions/{v.id}/image",
+            photo_url=f"/api/cases/{v.case_id}/versions/{v.id}/photo" if v.photo_path else None,
         )
 
 

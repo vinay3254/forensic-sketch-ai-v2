@@ -175,7 +175,7 @@ def test_missing_image_file_is_404(client, case_id, settings):
     v = client.post(f"/api/cases/{case_id}/generate", json={"description": "male"}).json()
     for p in settings.storage_dir.rglob("*.png"):
         p.unlink()
-    for url in (v["image_url"], f"/api/cases/{case_id}/versions/{v['id']}/export?style=photo"):
+    for url in (v["image_url"], f"/api/cases/{case_id}/versions/{v['id']}/export?style=sketch"):
         r = client.get(url)
         assert r.status_code == 404 and r.json()["error"]["code"] == "NOT_FOUND"
 
@@ -224,3 +224,34 @@ def test_landscape_jpeg_is_stored_as_portrait_png(client, case_id, app, settings
     img = Image.open(io.BytesIO(client.get(v["image_url"]).content))
     assert img.format == "PNG"
     assert abs(img.width / img.height - 1024 / 1536) < 0.01
+
+
+def test_stored_image_is_grayscale(client, case_id, app):
+    import io
+
+    from PIL import Image
+
+    buf = io.BytesIO()
+    Image.new("RGB", (1024, 1536), (200, 120, 90)).save(buf, "PNG")
+    app.state.ai_client.generate_image = lambda prompt: buf.getvalue()
+    v = client.post(f"/api/cases/{case_id}/generate", json={"description": "male"}).json()
+    img = Image.open(io.BytesIO(client.get(v["image_url"]).content))
+    assert img.mode == "L"
+
+
+def test_sketch_export_keeps_dark_pencil_lines(client, case_id, app):
+    """The stored image is already a sketch; export must not wash it out with an edge filter."""
+    import io
+
+    from PIL import Image, ImageDraw
+
+    src = Image.new("L", (1024, 1536), 255)
+    ImageDraw.Draw(src).ellipse((300, 400, 724, 1100), fill=140, outline=40, width=12)  # shaded face
+    buf = io.BytesIO()
+    src.save(buf, "PNG")
+    app.state.ai_client.generate_image = lambda prompt: buf.getvalue()
+    v = client.post(f"/api/cases/{case_id}/generate", json={"description": "male"}).json()
+    out = Image.open(io.BytesIO(client.get(f"/api/cases/{case_id}/versions/{v['id']}/export?style=sketch").content))
+    face = out.crop((0, 0, out.width, 2048))
+    assert out.mode == "L" and face.getextrema()[0] < 60
+    assert face.getpixel((face.width // 2, face.height // 2)) < 200  # shading survives

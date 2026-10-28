@@ -193,3 +193,13 @@ def test_edit_via_responses_api_without_image_is_ai_unavailable(settings):
     with pytest.raises(AppError) as e:
         client.edit_image(b"face", "p")
     assert e.value.code == "AI_UNAVAILABLE"
+
+
+def test_image_prompt_asks_for_black_and_white_pencil_sketch():
+    p = build_image_prompt(Attributes(gender="male")).lower()
+    assert "pencil sketch" in p and "black and white" in p and "photograph" not in p
+
+
+def test_edit_prompt_keeps_pencil_sketch_style():
+    p = build_edit_prompt([Edit(region="jaw", change="wider")]).lower()
+    assert "pencil sketch" in p and "black and white" in p

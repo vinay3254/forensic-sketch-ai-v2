@@ -43,6 +43,7 @@ export interface Version {
   attributes: Attributes
   created_at: string
   image_url: string
+  photo_url: string | null
 }
 
 export interface ChatMsg {
@@ -112,6 +113,7 @@ export const AUDIT_ACTIONS = [
   'refine',
   'revert',
   'export',
+  'make_photo',
   'audit_view',
   'access_denied',
 ] as const

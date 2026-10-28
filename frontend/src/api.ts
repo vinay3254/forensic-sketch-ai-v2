@@ -58,6 +58,9 @@ export const refine = (caseId: number, message: string) =>
 export const revert = (caseId: number, versionId: number) =>
   post<Version>(`/api/cases/${caseId}/versions/${versionId}/revert`)
 
+export const makePhoto = (caseId: number, versionId: number) =>
+  post<Version>(`/api/cases/${caseId}/versions/${versionId}/photo`)
+
 export const exportUrl = (caseId: number, versionId: number, style: 'photo' | 'sketch') =>
   `/api/cases/${caseId}/versions/${versionId}/export?style=${style}`
 

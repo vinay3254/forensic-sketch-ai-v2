@@ -64,6 +64,7 @@ class FaceVersion(SQLModel, table=True):
     attributes: dict = Field(default_factory=dict, sa_column=Column(JSON, nullable=False))
     prompt: str
     image_path: str
+    photo_path: str | None = None  # realistic photo made from this sketch, on request
     created_by: int = Field(foreign_key="user.id")
     created_at: datetime = ts_field()
 

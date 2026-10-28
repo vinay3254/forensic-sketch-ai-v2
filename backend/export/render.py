@@ -1,6 +1,4 @@
-import cv2
-import numpy as np
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 
 def upscale(img: Image.Image, long_side: int = 2048) -> Image.Image:
@@ -9,11 +7,9 @@ def upscale(img: Image.Image, long_side: int = 2048) -> Image.Image:
 
 
 def to_sketch(img: Image.Image) -> Image.Image:
-    gray = cv2.cvtColor(np.array(img.convert("RGB")), cv2.COLOR_RGB2GRAY)
-    blurred = cv2.GaussianBlur(255 - gray, (21, 21), 0)
-    sketch = cv2.divide(gray, 255 - blurred, scale=256)
-    sketch = cv2.convertScaleAbs(sketch, alpha=1.15, beta=0)
-    return Image.fromarray(sketch, mode="L")
+    """Faces are generated as pencil sketches, so only deepen the contrast for printing.
+    (An edge filter here would wash the graphite shading out to white.)"""
+    return ImageOps.autocontrast(img.convert("L"), cutoff=1)
 
 
 def stamp_footer(img: Image.Image, lines: list[str]) -> Image.Image:

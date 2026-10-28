@@ -24,7 +24,7 @@ EDIT_SYSTEM_PROMPT = (
 
 def build_image_prompt(a: Attributes) -> str:
     who = " ".join(x for x in [a.age_range, a.gender or "person"] if x)
-    parts = [f"Front-facing ID-style portrait photograph of a {who}"]
+    parts = [f"Black and white graphite pencil sketch of a {who}, front-facing portrait"]
     features = [
         f"{a.skin_tone} skin" if a.skin_tone else None,
         f"{a.face_shape} face" if a.face_shape else None,
@@ -43,8 +43,9 @@ def build_image_prompt(a: Attributes) -> str:
     if features:
         parts[0] += " with " + ", ".join(features)
     parts.append(
-        "Neutral expression, looking straight at the camera, head and shoulders, plain light-grey background, "
-        "even soft lighting, realistic photograph, sharp focus."
+        "Drawn by a forensic artist in pencil on plain white paper: realistic proportions, fine pencil strokes, "
+        "soft graphite shading, black and white only, no colour. Neutral expression, looking straight ahead, "
+        "head and shoulders, plain white background."
     )
     return ". ".join(parts)
 
@@ -52,10 +53,30 @@ def build_image_prompt(a: Attributes) -> str:
 def build_edit_prompt(edits: list[Edit]) -> str:
     changes = "; ".join(f"{e.region.replace('_', ' ')}: {e.change}" for e in edits)
     return (
-        f"Edit this portrait. Change only the following: {changes}. "
-        "Keep the same person, identity, pose, expression, lighting, background "
-        "and every other facial feature exactly the same."
+        f"Edit this black and white pencil sketch. Change only the following: {changes}. "
+        "Keep the same person, identity, pose, expression, framing, pencil sketch style, white background "
+        "and every other facial feature, including facial hair, exactly the same. Black and white only."
     )
+
+
+def build_photo_prompt(a: Attributes) -> str:
+    # the sketch carries shape but no colour, so colours come from the witness's attributes
+    colours = [
+        f"{a.skin_tone} skin" if a.skin_tone else None,
+        f"eyes: {a.eyes}" if a.eyes else None,
+        f"hair: {a.hair}" if a.hair else None,
+        f"facial hair: {a.facial_hair}" if a.facial_hair else None,
+    ]
+    colours = [c for c in colours if c]
+    prompt = (
+        "Turn this black and white pencil sketch into a realistic colour photograph of the same person. "
+        "Keep the identity, face shape, every facial feature, proportions, pose, expression and framing "
+        "exactly as drawn. Front-facing, head and shoulders, plain light-grey background, even soft lighting, "
+        "natural skin texture, sharp focus."
+    )
+    if colours:
+        prompt += " Colours from the witness description: " + "; ".join(colours) + "."
+    return prompt
 
 
 def apply_edits(a: Attributes, edits: list[Edit]) -> Attributes:

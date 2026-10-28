@@ -3,7 +3,14 @@ import { ATTRIBUTE_KEYS, type Version } from '../types'
 
 const label = (key: string) => key.replace('_', ' ').replace(/^\w/, (c) => c.toUpperCase())
 
-export default function AttributePanel({ caseId, version }: { caseId: number; version: Version | undefined }) {
+interface Props {
+  caseId: number
+  version: Version | undefined
+  busy: boolean
+  onMakePhoto: () => void
+}
+
+export default function AttributePanel({ caseId, version, busy, onMakePhoto }: Props) {
   return (
     <div className="space-y-4">
       <h2 className="font-semibold">Attributes</h2>
@@ -20,13 +27,23 @@ export default function AttributePanel({ caseId, version }: { caseId: number; ve
         <p className="text-sm text-slate-500">—</p>
       )}
       {version && (
-        <div className="flex gap-2">
-          <a href={exportUrl(caseId, version.id, 'photo')} download className="rounded bg-slate-900 px-3 py-2 text-sm text-white">
-            Export photo
-          </a>
-          <a href={exportUrl(caseId, version.id, 'sketch')} download className="rounded border border-slate-900 px-3 py-2 text-sm">
+        <div className="flex flex-wrap gap-2">
+          <a href={exportUrl(caseId, version.id, 'sketch')} download className="rounded bg-slate-900 px-3 py-2 text-sm text-white">
             Export sketch
           </a>
+          {version.photo_url ? (
+            <a href={exportUrl(caseId, version.id, 'photo')} download className="rounded border border-slate-900 px-3 py-2 text-sm">
+              Export photo
+            </a>
+          ) : (
+            <button
+              onClick={onMakePhoto}
+              disabled={busy}
+              className="rounded border border-slate-900 px-3 py-2 text-sm disabled:opacity-50"
+            >
+              Make realistic photo
+            </button>
+          )}
         </div>
       )}
     </div>

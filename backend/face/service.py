@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 from backend.ai.client import AIClient
-from backend.ai.prompts import apply_edits, build_edit_prompt, build_image_prompt
+from backend.ai.prompts import apply_edits, build_edit_prompt, build_image_prompt, build_photo_prompt
 from backend.ai.schemas import Attributes
 from backend.config import Settings
 from backend.errors import AppError
@@ -30,14 +30,15 @@ def existing_image_file(settings: Settings, rel_path: str) -> Path:
     return path
 
 
-def normalize_image(data: bytes, size: str) -> bytes:
-    """Return the AI image as PNG, centre-cropped to the configured aspect ratio.
+def normalize_image(data: bytes, size: str, mode: str = "L") -> bytes:
+    """Return the AI image as PNG in `mode` ("L" for sketches, "RGB" for photos),
+    centre-cropped to the configured aspect ratio.
 
     Providers differ: some send JPEG, some ignore the requested size (Codex returns
     landscape). Unreadable bytes are rejected before anything is stored."""
     try:
         with Image.open(io.BytesIO(data)) as src:
-            img = src.convert("RGB")
+            img = src.convert(mode)  # sketches stay black and white even if the model adds a tint
     except (UnidentifiedImageError, OSError, SyntaxError, ValueError):
         raise AppError("AI_UNAVAILABLE", "The image service returned an unreadable image. Try again.", 503)
     w, h = (int(n) for n in size.lower().split("x"))
@@ -171,3 +172,25 @@ def revert_face(session: Session, settings: Settings, case: Case, user: User, ve
         created_by=user.id,
     )
     return _commit_version(session, settings, version, [("assistant", f"Reverted to version {source.version_no}.")])
+
+
+def make_photo(session: Session, ai: AIClient, settings: Settings, version: FaceVersion) -> FaceVersion:
+    """Turn a sketch version into a realistic colour photo, once; later calls reuse the file."""
+    if version.photo_path and image_file(settings, version.photo_path).is_file():
+        return version
+    sketch = existing_image_file(settings, version.image_path).read_bytes()
+    photo = ai.edit_image(sketch, build_photo_prompt(Attributes(**version.attributes)))
+    photo = normalize_image(photo, settings.llm_image_size, mode="RGB")
+    rel = f"cases/{version.case_id}/v{version.version_no}-photo-{uuid.uuid4().hex[:8]}.png"
+    path = image_file(settings, rel)
+    path.write_bytes(photo)
+    try:
+        version.photo_path = rel
+        session.add(version)
+        session.commit()
+    except Exception:
+        session.rollback()
+        path.unlink(missing_ok=True)
+        raise
+    session.refresh(version)
+    return version

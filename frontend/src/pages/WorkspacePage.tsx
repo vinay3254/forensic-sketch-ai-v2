@@ -1,14 +1,18 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { ApiError, generate, getCase, refine, revert } from '../api'
+import { ApiError, generate, getCase, makePhoto, refine, revert } from '../api'
 import AttributePanel from '../components/AttributePanel'
 import DescriptionForm from '../components/DescriptionForm'
-import FaceCanvas from '../components/FaceCanvas'
+import FaceCanvas, { type View } from '../components/FaceCanvas'
 import RefineChat from '../components/RefineChat'
 import VersionStrip from '../components/VersionStrip'
 
-type Action = { kind: 'generate'; text: string } | { kind: 'refine'; text: string } | { kind: 'revert'; versionId: number }
+type Action =
+  | { kind: 'generate'; text: string }
+  | { kind: 'refine'; text: string }
+  | { kind: 'revert'; versionId: number }
+  | { kind: 'photo'; versionId: number }
 
 const RETRYABLE = new Set(['AI_REFUSED', 'AI_UNAVAILABLE'])
 
@@ -17,18 +21,21 @@ export default function WorkspacePage() {
   const queryClient = useQueryClient()
   const [selectedId, setSelectedId] = useState<number>()
   const [startingOver, setStartingOver] = useState(false)
+  const [view, setView] = useState<View>('sketch')
   const { data, isPending, error } = useQuery({ queryKey: ['case', caseId], queryFn: () => getCase(caseId) })
 
   const mutation = useMutation({
     mutationFn: async (action: Action) => {
       if (action.kind === 'generate') return generate(caseId, action.text)
       if (action.kind === 'refine') return (await refine(caseId, action.text)).version
+      if (action.kind === 'photo') return makePhoto(caseId, action.versionId)
       return revert(caseId, action.versionId)
     },
-    onSuccess: (version) => {
+    onSuccess: (version, action) => {
       if (version) {
         setSelectedId(version.id)
         setStartingOver(false)
+        setView(action.kind === 'photo' ? 'photo' : 'sketch')
       }
       return queryClient.invalidateQueries({ queryKey: ['case', caseId] })
     },
@@ -86,10 +93,15 @@ export default function WorkspacePage() {
           )}
         </section>
         <section className="flex flex-col items-center gap-4">
-          <FaceCanvas version={selected} busy={busy} />
+          <FaceCanvas version={selected} view={view} busy={busy} onView={setView} />
         </section>
         <section className="rounded-lg bg-white p-4 shadow">
-          <AttributePanel caseId={caseId} version={selected} />
+          <AttributePanel
+            caseId={caseId}
+            version={selected}
+            busy={busy}
+            onMakePhoto={() => selected && mutation.mutate({ kind: 'photo', versionId: selected.id })}
+          />
         </section>
       </div>
       {versions.length > 0 && (
@@ -98,7 +110,10 @@ export default function WorkspacePage() {
             versions={versions}
             selectedId={selected?.id}
             busy={busy}
-            onSelect={setSelectedId}
+            onSelect={(id) => {
+              setSelectedId(id)
+              setView('sketch')
+            }}
             onRevert={(versionId) => mutation.mutate({ kind: 'revert', versionId })}
           />
         </section>
