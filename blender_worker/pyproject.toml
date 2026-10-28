@@ -1,0 +1,13 @@
+[project]
+name = "trace-blender-worker"
+version = "0.1.0"
+description = "TRACE figure worker: builds a parametric mannequin in Blender (bpy), returns GLB / pencil PNG / .blend"
+requires-python = "==3.13.*"
+dependencies = [
+    "bpy==5.2.3",
+    "fastapi>=0.115",
+    "uvicorn",
+]
+
+[tool.uv]
+package = false
