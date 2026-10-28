@@ -1,6 +1,7 @@
 import json
 
 from backend.ai.schemas import Attributes, Coverage, Edit, EditPlan
+from backend.cases.details import CaseDetails
 
 ATTRIBUTE_SYSTEM_PROMPT = (
     "You convert a witness's description of a person's face into structured attributes. "
@@ -98,6 +99,25 @@ def build_variant_prompt(kind: str) -> str:
         "Keep the same person, identity, face, expression, pose, framing, rough hand-drawn pencil line style "
         "and plain background exactly the same, and change nothing else. Black and white only."
     )
+
+
+def build_body_prompt(a: Attributes, d: CaseDetails) -> str:
+    """Only the person's look goes in; incident details (weapon, offence...) never do."""
+    who = " ".join(x for x in [a.age_range, a.gender] if x) or "adult person"
+    parts = [f"Quick hand-drawn pencil sketch of a full-length standing figure of a {who}"]
+    head = ", ".join(x for x in [a.hair, a.facial_hair] if x)
+    if head:
+        parts.append(f"Head as in the face sketch: {head}")
+    if d.build:
+        parts.append(f"Body build as the witness described it: {d.build}")
+    if d.clothing:
+        parts.append(f"Wearing: {d.clothing}")
+    parts.append(
+        "Drawn by hand in soft pencil on plain off-white paper: loose outlines, rough hatching, the face drawn "
+        "simply. Front view, standing straight with arms relaxed at the sides, the whole body visible from head "
+        "to feet, plain background. Black and white only, no colour."
+    )
+    return ". ".join(parts)
 
 
 def build_photo_prompt(a: Attributes) -> str:

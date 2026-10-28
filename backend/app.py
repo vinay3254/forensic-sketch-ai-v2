@@ -9,6 +9,7 @@ from backend.ai.mock import MockAIClient
 from backend.audit.routes import router as audit_router
 from backend.auth.ratelimit import LoginLimiter
 from backend.auth.routes import router as auth_router
+from backend.body.routes import router as body_router
 from backend.cases.routes import router as cases_router
 from backend.config import Settings, get_settings
 from backend.db import init_db, make_engine
@@ -58,6 +59,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(export_router)
     app.include_router(interview_router)
     app.include_router(variants_router)
+    app.include_router(body_router)
 
     @app.get("/health")
     def health():

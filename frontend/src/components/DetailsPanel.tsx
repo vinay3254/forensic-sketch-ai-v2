@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState, type ReactNode } from 'react'
 import { saveDetails } from '../api'
+import BodyFigureCard from './BodyFigureCard'
 import { INCIDENT_FIELDS, PERSON_FIELDS, type CaseDetails, type DetailKey } from '../types'
 
 const MAX = 500
@@ -8,7 +9,7 @@ const MAX = 500
 interface Props {
   caseId: number
   details: CaseDetails
-  children?: ReactNode // extra cards for the person column (full-body figure, build chart)
+  children?: ReactNode // extra cards for the person column (build chart)
 }
 
 export default function DetailsPanel({ caseId, details, children }: Props) {
@@ -56,6 +57,7 @@ export default function DetailsPanel({ caseId, details, children }: Props) {
           <h3 className="text-xs font-medium uppercase tracking-wide text-slate-500">Person</h3>
           {PERSON_FIELDS.map(field)}
           {children}
+          <BodyFigureCard caseId={caseId} height={details.height} unsaved={dirty} />
         </div>
         <div className="space-y-2">
           <h3 className="text-xs font-medium uppercase tracking-wide text-slate-500">Incident</h3>

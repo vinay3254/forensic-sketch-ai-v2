@@ -2,6 +2,7 @@ import type {
   AuditFilters,
   AuditPage,
   AuditVerify,
+  BodyFigure,
   Case,
   CaseDetail,
   CaseDetails,
@@ -69,6 +70,14 @@ export const makePhoto = (caseId: number, versionId: number) =>
 
 export const saveDetails = (caseId: number, details: CaseDetails) =>
   request<CaseDetails>(`/api/cases/${caseId}/details`, { method: 'PUT', body: JSON.stringify(details) })
+
+// null until a figure has been drawn
+export const getBody = (caseId: number) =>
+  request<BodyFigure>(`/api/cases/${caseId}/body`).catch((e) => {
+    if (e instanceof ApiError && e.status === 404) return null
+    throw e
+  })
+export const drawBody = (caseId: number) => post<BodyFigure>(`/api/cases/${caseId}/body`)
 
 export const listVariants = (caseId: number) => request<Variant[]>(`/api/cases/${caseId}/variants`)
 export const makeVariant = (caseId: number, versionId: number, kind: VariantKind) =>

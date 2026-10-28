@@ -89,6 +89,17 @@ class Variant(SQLModel, table=True):
     created_at: datetime = ts_field()
 
 
+class BodyFigure(SQLModel, table=True):
+    """Full-length pencil figure from the case's build and clothing; the newest one is used."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    case_id: int = Field(foreign_key="case.id", index=True)
+    image_path: str
+    prompt: str
+    created_by: int = Field(foreign_key="user.id")
+    created_at: datetime = ts_field()
+
+
 class ChatMessage(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     case_id: int = Field(foreign_key="case.id", index=True)

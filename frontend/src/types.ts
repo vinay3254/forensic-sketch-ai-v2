@@ -104,6 +104,12 @@ export interface Variant {
   created_at: string
 }
 
+export interface BodyFigure {
+  id: number
+  image_url: string
+  created_at: string
+}
+
 export interface CaseDetail {
   case: Case
   versions: Version[]
@@ -166,6 +172,7 @@ export const AUDIT_ACTIONS = [
   'export',
   'make_photo',
   'variant_create',
+  'body_create',
   'interview_start',
   'interview_assist',
   'interview_confirm',
