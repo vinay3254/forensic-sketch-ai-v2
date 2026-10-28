@@ -114,3 +114,18 @@ def test_other_officer_is_denied_and_audited(client, case_id, login):
     login(client, "admin", "adminpass")
     rows = client.get(f"/api/audit?action=access_denied&case_id={case_id}").json()["items"]
     assert len(rows) == 2
+
+
+def test_optional_extras_are_saved_with_their_bank_prompt(client, case_id):
+    from backend.interview.questions import EXTRAS
+
+    iv = start(client, case_id)
+    answers = [
+        {"key": "facial_hair", "answer": "some stubble i think", "status": "uncertain", "source": "speech"},
+        {"key": "distinguishing_features", "answer": "a cut above his left eyebrow", "status": "remembered"},
+    ]
+    client.put(f"/api/cases/{case_id}/interviews/{iv['id']}", json={"answers": answers})
+    saved = {a["key"]: a for a in client.get(f"/api/cases/{case_id}/interviews/{iv['id']}").json()["answers"]}
+    bank = {e["key"]: e["prompt"] for e in EXTRAS}
+    assert saved["facial_hair"]["prompt"] == bank["facial_hair"] and saved["facial_hair"]["answer"] == "some stubble i think"
+    assert saved["distinguishing_features"]["status"] == "remembered"

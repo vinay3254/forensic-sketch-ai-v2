@@ -88,10 +88,12 @@ export default function InterviewPage() {
     return <p className="rounded bg-red-50 p-4 text-red-700">{loadError?.message ?? 'Could not load the interview.'}</p>
   }
 
-  const { free_recall: free, features } = bank.data
+  const { free_recall: free, features, extras } = bank.data
+  const questions = [...features, ...extras]
+  const firstExtra = features.length + 1
   const locked = interview.data.status !== 'draft'
-  const total = features.length + 1
-  const question = step === 0 ? null : features[step - 1]
+  const total = questions.length + 1
+  const question = step === 0 ? null : questions[step - 1]
   const entry: Entry = question ? (entries[question.key] ?? { answer: '', status: null, source: null }) : { answer: freeRecall, status: null, source: freeSource }
 
   function setStatus(status: RecallStatus | null) {
@@ -134,24 +136,30 @@ export default function InterviewPage() {
 
       <div className="grid gap-6 lg:grid-cols-[16rem_1fr]">
         <nav className="h-fit rounded-lg bg-white p-2 shadow">
-          {[{ key: free.key, label: free.label }, ...features].map((q, i) => {
+          {[{ key: free.key, label: free.label }, ...questions].map((q, i) => {
             const st = i === 0 ? null : entries[q.key]?.status
             const filled = i === 0 ? freeRecall.trim() !== '' : !!entries[q.key]?.answer.trim()
             const dot = STATUSES.find((s) => s.value === st)?.dot
             return (
-              <button
-                key={q.key}
-                onClick={() => setStep(i)}
-                className={`flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm ${i === step ? 'bg-slate-900 text-white' : 'hover:bg-slate-100'}`}
-              >
-                <span className="w-5 text-xs opacity-60">{i + 1}</span>
-                <span className="flex-1">{q.label}</span>
-                {dot ? (
-                  <span className={`size-2.5 rounded-full ${dot}`} />
-                ) : (
-                  filled && <span className="size-2.5 rounded-full border border-current opacity-60" />
+              <div key={q.key}>
+                {i === firstExtra && (
+                  <p className="mt-2 border-t px-3 pb-1 pt-3 text-xs font-medium uppercase tracking-wide text-slate-400">
+                    Optional
+                  </p>
                 )}
-              </button>
+                <button
+                  onClick={() => setStep(i)}
+                  className={`flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm ${i === step ? 'bg-slate-900 text-white' : 'hover:bg-slate-100'}`}
+                >
+                  <span className="w-5 text-xs opacity-60">{i + 1}</span>
+                  <span className="flex-1">{q.label}</span>
+                  {dot ? (
+                    <span className={`size-2.5 rounded-full ${dot}`} />
+                  ) : (
+                    filled && <span className="size-2.5 rounded-full border border-current opacity-60" />
+                  )}
+                </button>
+              </div>
             )
           })}
         </nav>
@@ -159,7 +167,13 @@ export default function InterviewPage() {
         <section className="space-y-4 rounded-lg bg-white p-6 shadow">
           <p className="text-xs uppercase tracking-wide text-slate-500">
             Step {step + 1} of {total} · {question ? question.label : free.label}
+            {question?.optional && ' · optional'}
           </p>
+          {question?.optional && step === firstExtra && (
+            <p className="rounded bg-slate-50 p-3 text-sm text-slate-600">
+              These last questions are optional. Ask them only if the witness is comfortable, and skip any they have nothing to add to.
+            </p>
+          )}
           <div className="rounded-lg border-l-4 border-slate-900 bg-slate-50 p-4">
             <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Read aloud</p>
             <p className="mt-1 text-lg">“{question ? question.prompt : free.prompt}”</p>
@@ -195,7 +209,7 @@ export default function InterviewPage() {
                 ))}
               </div>
               {entry.status === 'unknown' && (
-                <p className="mt-2 text-xs text-slate-500">This feature will be left blank in the sketch. Nothing will be guessed.</p>
+                <p className="mt-2 text-xs text-slate-500">This will be left out of the sketch. Nothing will be guessed.</p>
               )}
             </div>
           )}
@@ -204,12 +218,20 @@ export default function InterviewPage() {
             <button onClick={() => setStep(step - 1)} disabled={step === 0} className="rounded px-4 py-2 text-sm hover:bg-slate-100 disabled:opacity-40">
               ← Back
             </button>
+            {question?.optional && step < total - 1 && (
+              <button onClick={() => setStep(total - 1)} className="ml-auto rounded px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">
+                Skip remaining optional questions
+              </button>
+            )}
             {step < total - 1 ? (
-              <button onClick={() => setStep(step + 1)} className="ml-auto rounded bg-slate-900 px-4 py-2 text-sm text-white">
-                Next →
+              <button
+                onClick={() => setStep(step + 1)}
+                className={`${question?.optional ? 'ml-2' : 'ml-auto'} rounded bg-slate-900 px-4 py-2 text-sm text-white`}
+              >
+                {step === firstExtra - 1 ? 'Next: optional questions →' : question?.optional ? 'Next / skip →' : 'Next →'}
               </button>
             ) : (
-              <span className="ml-auto text-sm text-slate-500">All feature questions done.</span>
+              <span className="ml-auto text-sm text-slate-500">All questions done.</span>
             )}
           </div>
         </section>
