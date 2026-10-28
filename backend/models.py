@@ -51,6 +51,7 @@ class Case(SQLModel, table=True):
     status: str = "open"
     # person and incident facts for the case sheet (backend/cases/details.py)
     details: dict | None = Field(default=None, sa_column=Column(JSON, nullable=True))
+    figure: dict | None = Field(default=None, sa_column=Column(JSON, nullable=True))  # Blender figure settings
     created_at: datetime = ts_field()
 
 

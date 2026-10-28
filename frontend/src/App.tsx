@@ -13,6 +13,7 @@ import AuditPage from './pages/AuditPage'
 import CasesPage from './pages/CasesPage'
 import CaseSheetPage from './pages/CaseSheetPage'
 import DetailsPage from './pages/DetailsPage'
+import FigurePage from './pages/FigurePage'
 import InterviewPage from './pages/InterviewPage'
 import InterviewRedirect from './pages/InterviewRedirect'
 import LoginPage from './pages/LoginPage'
@@ -194,6 +195,14 @@ export default function App() {
         element={
           <Guard>
             <StylesPage />
+          </Guard>
+        }
+      />
+      <Route
+        path="/cases/:id/figure"
+        element={
+          <Guard>
+            <FigurePage />
           </Guard>
         }
       />

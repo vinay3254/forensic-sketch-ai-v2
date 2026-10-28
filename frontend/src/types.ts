@@ -144,6 +144,23 @@ export interface StyleCategory {
   styles: StyleItem[]
 }
 
+export interface FigureParams {
+  height_cm: number
+  build: number
+  muscle: number
+  gender: number
+  age: number
+  top: 'none' | 'tshirt' | 'shirt' | 'hoodie' | 'jacket' | 'kurta'
+  bottom: 'none' | 'trousers' | 'jeans' | 'shorts' | 'skirt'
+  headwear: 'none' | 'cap'
+}
+
+export interface FigureState {
+  params: FigureParams
+  model_url: string
+  reply: string | null
+}
+
 export interface CaseDetail {
   case: Case
   versions: Version[]
@@ -207,6 +224,8 @@ export const AUDIT_ACTIONS = [
   'make_photo',
   'variant_create',
   'style_apply',
+  'figure_update',
+  'figure_save',
   'body_create',
   'head_create',
   'angle_view_create',

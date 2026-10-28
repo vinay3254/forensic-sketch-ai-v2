@@ -4,7 +4,7 @@ import textwrap
 
 from PIL import Image, ImageDraw
 
-from backend.ai.schemas import Attributes, Coverage, CoverageQuote, Edit, EditPlan
+from backend.ai.schemas import Attributes, Coverage, CoverageQuote, Edit, EditPlan, FigureEdit
 
 _EDIT_KEYWORDS = [
     (r"\bjaw", "jaw"),
@@ -73,6 +73,32 @@ class MockAIClient:
                 if key in _COVERAGE_KEYWORDS and _word(_COVERAGE_KEYWORDS[key], s)
             ]
         )
+
+    def figure_edit(self, request: str, current) -> FigureEdit:
+        from backend.figure.params import clothing_from
+
+        t = request.lower()
+        changes: dict = {}
+        if re.search(r"\b(heavier|fatter|bigger|chubbier)\b", t):
+            changes["build"] = current.build + 0.2
+        if re.search(r"\b(thinner|slimmer|leaner)\b", t):
+            changes["build"] = current.build - 0.2
+        if m := re.search(r"(\d{3})\s*cm", t):
+            changes["height_cm"] = float(m.group(1))
+        elif "taller" in t:
+            changes["height_cm"] = current.height_cm + 8
+        elif "shorter" in t:
+            changes["height_cm"] = current.height_cm - 8
+        if "muscular" in t:
+            changes["muscle"] = 0.85
+        if "older" in t:
+            changes["age"] = current.age + 15
+        if "younger" in t:
+            changes["age"] = current.age - 15
+        if re.search(r"\b(woman|female|she|her)\b", t):
+            changes["gender"] = 1.0
+        changes.update(clothing_from(t))
+        return FigureEdit(changes=changes, reply="Updated the figure." if changes else "Nothing to change in that.")
 
     def _placeholder(self, prompt: str) -> bytes:
         img = Image.new("RGB", (1024, 1536), (128, 128, 128))

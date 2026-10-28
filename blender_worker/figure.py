@@ -173,7 +173,7 @@ def _cap(J: dict):
     bm.free()
     cap = bpy.data.objects.new("cap", mesh)
     bpy.context.scene.collection.objects.link(cap)
-    cap.location = (hx, hy - hr * 0.1, hz - hr * 0.35)
+    cap.location = (hx, hy - hr * 0.1, hz - hr * 0.8)  # sits down on the crown
     cap.scale.z = 0.8
     cap.data.materials.append(_material("cap", 0.4))
     return cap

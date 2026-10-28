@@ -1,7 +1,7 @@
 import json
 import re
 
-from backend.ai.schemas import Attributes, Coverage, Edit, EditPlan
+from backend.ai.schemas import Attributes, Coverage, Edit, EditPlan, FigureEdit
 from backend.cases.details import CaseDetails
 
 ATTRIBUTE_SYSTEM_PROMPT = (
@@ -31,6 +31,18 @@ COVERAGE_SYSTEM_PROMPT = (
     "Each quote must be copied character for character from the account: same words, spelling, case and "
     "punctuation. Never paraphrase, correct, summarise or combine separate parts. Use only the given keys. "
     "Leave a feature out if the account does not mention it. Never guess."
+)
+
+
+FIGURE_SYSTEM_PROMPT = (
+    "You adjust a 3D mannequin of a person for an officer, from their request. Current settings come as JSON: "
+    "height_cm (120-220), build (0 slim .. 1 obese), muscle (0..1), gender (0 male .. 1 female), age (years), "
+    "top (none, tshirt, shirt, hoodie, jacket, kurta), bottom (none, trousers, jeans, shorts, skirt), "
+    "headwear (none, cap). Reply with exactly one JSON object and nothing else, matching this JSON schema:\n"
+    f"{json.dumps(FigureEdit.model_json_schema())}\n"
+    "changes holds only the settings the request changes, with their new values; relative requests "
+    "(\"a bit heavier\", \"taller\") move the current value by a sensible step. Clothing not in the lists "
+    "maps to the closest item. reply is one short sentence saying what changed."
 )
 
 

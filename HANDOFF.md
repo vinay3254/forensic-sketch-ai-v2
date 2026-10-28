@@ -103,6 +103,15 @@ The image prompt asks for a rough, hand-drawn composite of an ordinary face (loo
 - Thumbnails are faceless pencil mannequins in `backend/assets/styles/`, drawn by `scripts/make_style_thumbs.py` (skips existing files; about 2 min each). Missing ones show a placeholder icon.
 - Live check: Hoodie on the woman's sketch, face unchanged, `localized` true.
 
+## Blender figure (2026-10-28)
+
+- **Figure** tab (Alt+5; case sheet is Alt+6): a 3D mannequin the officer shapes by typing ("heavier, about 185 cm, jacket and jeans") or with sliders (height cm, build, muscle, body shape, age) and clothing chips (top, bottom, cap). It redraws as you go and can be turned around; a red ruler shows the height to scale.
+- `blender_worker/` (Python 3.13 + `bpy` 5.2.3) keeps Blender loaded: `cd blender_worker && uv run uvicorn server:app --port 8020`, with `FIGURE_URL=http://127.0.0.1:8020` in `.env`. Rebuild + GLB export ~25–75 ms; pencil PNG for the case sheet ~4 s (Cycles CPU + Freestyle; the GPU did not help, see below); `.blend` download for the Blender app ("Open in Blender" needs `sudo pacman -S blender`).
+- The body is built only with Blender's own Skin/Subdivision modifiers (a mannequin, generic head); garments are cut from the body surface. MPFB2 (realistic MakeHuman bodies, CC0 assets) was tried but running its downloaded code was blocked by Claude Code's safety check; it can replace the mannequin if the user allows it.
+- Backend `figure/`: settings per case on `Case.figure` (defaults read from case details and the sketch: height text in any unit, build words, gender, age, clothing words); `POST /figure/prompt` turns words into setting changes through the chat model (`figure_edit`); `POST /figure/save` renders the pencil figure into the case's full-body figure (so it prints on the case sheet). Audit `figure_update`, `figure_save`.
+- GPU check: on this laptop Cycles CUDA/OptiX was no faster than CPU for this tiny scene (time goes to setup and the CPU-only Freestyle pass), and EEVEE runs in software without a display. Real-time comes from the browser drawing the model with WebGL instead.
+- Known roughness: jagged garment edges, plain mannequin head.
+
 ## Next (agreed, not started)
 
 1. **Suspect matching (CPU)**: InsightFace `buffalo_l` via ONNX Runtime (like the face parser), admin-managed face set stored in SQLite (512-d embeddings, plain cosine search), search from a version's realistic photo, top-5 "possible leads" with scores and a cut-off ("no strong match" below it), every search audited. Needs a short design first. Demo face set only (CUFS under its research licence, or AI-generated faces); `buffalo_l` weights are non-commercial.

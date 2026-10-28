@@ -17,6 +17,8 @@ from backend.db import init_db, make_engine
 from backend.export.routes import router as export_router
 from backend.face.regions import FaceParser
 from backend.face.routes import router as face_router
+from backend.figure.client import HttpFigureWorker
+from backend.figure.routes import router as figure_router
 from backend.head3d.client import HttpHead3DClient
 from backend.head3d.routes import router as head3d_router
 from backend.interview.routes import router as interview_router
@@ -49,6 +51,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.ai_client = MockAIClient() if settings.ai_mock else LiveAIClient(settings)
     app.state.face_parser = make_face_parser(settings)
     app.state.head3d_client = HttpHead3DClient(settings.head3d_url) if settings.head3d_url else None
+    app.state.figure_worker = HttpFigureWorker(settings.figure_url) if settings.figure_url else None
 
     app.add_middleware(
         CORSMiddleware,
@@ -70,6 +73,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(sheet_router)
     app.include_router(styles_router)
     app.include_router(head3d_router)
+    app.include_router(figure_router)
 
     @app.get("/health")
     def health():

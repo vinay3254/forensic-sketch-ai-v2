@@ -30,6 +30,8 @@ class Settings(BaseSettings):
     edit_localize: bool = True
     # 3D head worker (head3d/server.py), e.g. http://127.0.0.1:8010; empty turns the 3D head off
     head3d_url: str = ""
+    # Blender figure worker (blender_worker/server.py), e.g. http://127.0.0.1:8020; empty turns it off
+    figure_url: str = ""
     ai_mock: bool = False
 
 

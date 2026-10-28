@@ -34,7 +34,7 @@ class CaseOut(BaseModel):
 
     @classmethod
     def of(cls, c: Case) -> "CaseOut":
-        return cls(**c.model_dump(exclude={"details"}), details=c.details or {})
+        return cls(**c.model_dump(exclude={"details", "figure"}), details=c.details or {})
 
 
 class VersionOut(BaseModel):

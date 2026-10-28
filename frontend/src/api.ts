@@ -13,6 +13,8 @@ import type {
   InterviewDraft,
   QuestionBank,
   StyleCategory,
+  FigureParams,
+  FigureState,
   RefineResult,
   User,
   Variant,
@@ -92,6 +94,28 @@ export const makeHead = (caseId: number, versionId: number) => post<Head3D>(`/ap
 export const listStyles = () => request<StyleCategory[]>('/api/styles')
 export const applyStyle = (caseId: number, body: { style: string } | { category: string; text: string }) =>
   post<RefineResult>(`/api/cases/${caseId}/style`, body)
+
+export const getFigure = (caseId: number) => request<FigureState>(`/api/cases/${caseId}/figure`)
+export const putFigure = (caseId: number, params: FigureParams) =>
+  request<FigureState>(`/api/cases/${caseId}/figure`, { method: 'PUT', body: JSON.stringify(params) })
+export const promptFigure = (caseId: number, text: string) => post<FigureState>(`/api/cases/${caseId}/figure/prompt`, { text })
+export const saveFigure = (caseId: number) => post<{ body_id: number; image_url: string }>(`/api/cases/${caseId}/figure/save`)
+export const figureBlendUrl = (caseId: number) => `/api/cases/${caseId}/figure.blend`
+
+// the 3D model as raw GLB bytes; a 503 FIGURE_OFF means the Blender worker is not running
+export async function figureModel(caseId: number, params?: FigureParams): Promise<ArrayBuffer> {
+  const res = await fetch(params ? `/api/cases/${caseId}/figure/preview.glb` : `/api/cases/${caseId}/figure/model.glb`, {
+    method: params ? 'POST' : 'GET',
+    credentials: 'include',
+    headers: params ? { 'Content-Type': 'application/json' } : undefined,
+    body: params ? JSON.stringify(params) : undefined,
+  })
+  if (!res.ok) {
+    const err = (await res.json().catch(() => null))?.error
+    throw new ApiError(err?.code ?? 'UNKNOWN', err?.message ?? `Request failed (${res.status}).`, res.status)
+  }
+  return res.arrayBuffer()
+}
 
 export const listVariants = (caseId: number) => request<Variant[]>(`/api/cases/${caseId}/variants`)
 export const makeVariant = (caseId: number, versionId: number, kind: VariantKind) =>

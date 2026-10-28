@@ -44,3 +44,8 @@ class CoverageQuote(BaseModel):
 
 class Coverage(BaseModel):
     covered: list[CoverageQuote]
+
+
+class FigureEdit(BaseModel):
+    changes: dict  # FigureParams fields to set (figure/params.py clamps and validates them)
+    reply: str
