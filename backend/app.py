@@ -4,6 +4,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
+from backend.auth.ratelimit import LoginLimiter
+from backend.auth.routes import router as auth_router
 from backend.config import Settings, get_settings
 from backend.db import init_db, make_engine
 from backend.errors import register_error_handlers
@@ -21,6 +23,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(title="AI Crime Scene Sketch Generator", lifespan=lifespan)
     app.state.settings = settings
     app.state.engine = make_engine(settings.database_url)
+    app.state.login_limiter = LoginLimiter()
 
     app.add_middleware(
         CORSMiddleware,
@@ -30,6 +33,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_headers=["*"],
     )
     register_error_handlers(app)
+    app.include_router(auth_router)
 
     @app.get("/health")
     def health():
