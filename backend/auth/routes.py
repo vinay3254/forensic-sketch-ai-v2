@@ -1,13 +1,15 @@
+from datetime import UTC, datetime
+
 from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
 from backend.audit.logger import record
-from backend.auth.deps import COOKIE_NAME, current_user
-from backend.auth.security import create_token, verify_password
+from backend.auth.deps import COOKIE_NAME, current_user, session_claims
+from backend.auth.security import DUMMY_HASH, create_token, verify_password
 from backend.db import get_session
 from backend.errors import AppError
-from backend.models import User
+from backend.models import RevokedToken, User
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
@@ -29,7 +31,8 @@ def login(body: LoginIn, request: Request, response: Response, session: Session 
     limiter = request.app.state.login_limiter
     limiter.check(body.username)
     user = session.exec(select(User).where(User.username == body.username)).first()
-    if user is None or not verify_password(body.password, user.password_hash):
+    ok = verify_password(body.password, user.password_hash if user else DUMMY_HASH)
+    if user is None or not ok:
         limiter.fail(body.username)
         record(session, request, "login_failed", username=body.username)
         raise AppError("UNAUTHENTICATED", "Wrong username or password.", 401)
@@ -48,10 +51,18 @@ def login(body: LoginIn, request: Request, response: Response, session: Session 
 
 @router.post("/logout", status_code=204)
 def logout(
-    request: Request, response: Response, user: User = Depends(current_user), session: Session = Depends(get_session)
+    request: Request,
+    response: Response,
+    user: User = Depends(current_user),
+    claims: dict = Depends(session_claims),
+    session: Session = Depends(get_session),
 ):
+    session.add(RevokedToken(jti=claims["jti"], expires_at=datetime.fromtimestamp(claims["exp"], UTC)))
+    session.commit()
     record(session, request, "logout", user)
-    response.delete_cookie(COOKIE_NAME)
+    response.delete_cookie(
+        COOKIE_NAME, httponly=True, secure=request.app.state.settings.cookie_secure, samesite="strict"
+    )
 
 
 @router.get("/me", response_model=UserOut)

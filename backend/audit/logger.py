@@ -23,23 +23,28 @@ def compute_hash(
     prev_hash: str,
     ts: datetime,
     user_id: int | None,
+    username: str | None,
+    role: str | None,
     action: str,
     case_id: int | None,
     version_id: int | None,
+    ip: str | None,
+    user_agent: str | None,
     detail: dict,
 ) -> str:
-    payload = "|".join(
-        [
-            prev_hash,
-            _canonical_ts(ts),
-            str(user_id),
-            action,
-            str(case_id),
-            str(version_id),
-            json.dumps(detail, sort_keys=True),
-        ]
+    # JSON array, not a joined string, so a "|" inside a user agent cannot shift fields
+    payload = json.dumps(
+        [prev_hash, _canonical_ts(ts), user_id, username, role, action, case_id, version_id, ip, user_agent, detail],
+        sort_keys=True,
     )
     return hashlib.sha256(payload.encode()).hexdigest()
+
+
+def _row_hash(prev_hash: str, row: AuditLog) -> str:
+    return compute_hash(
+        prev_hash, row.ts, row.user_id, row.username, row.role, row.action,
+        row.case_id, row.version_id, row.ip, row.user_agent, row.detail,
+    )
 
 
 def record(
@@ -57,11 +62,9 @@ def record(
     with _chain_lock:
         last = session.exec(select(AuditLog).order_by(AuditLog.id.desc())).first()
         prev_hash = last.hash if last else GENESIS_HASH
-        ts = utcnow()
-        user_id = user.id if user else None
         row = AuditLog(
-            ts=ts,
-            user_id=user_id,
+            ts=utcnow(),
+            user_id=user.id if user else None,
             username=user.username if user else username,
             role=user.role if user else None,
             action=action,
@@ -71,8 +74,9 @@ def record(
             user_agent=request.headers.get("user-agent"),
             detail=detail,
             prev_hash=prev_hash,
-            hash=compute_hash(prev_hash, ts, user_id, action, case_id, version_id, detail),
+            hash="",
         )
+        row.hash = _row_hash(prev_hash, row)
         session.add(row)
         session.commit()
         session.refresh(row)
@@ -80,11 +84,13 @@ def record(
 
 
 def verify_chain(session: Session) -> dict:
+    """Check every link. Deleting rows from the end leaves a valid chain, so the head is
+    returned too: an auditor who noted an earlier head can confirm it is still in the log."""
     rows = session.exec(select(AuditLog).order_by(AuditLog.id)).all()
     prev_hash = GENESIS_HASH
     for row in rows:
-        expected = compute_hash(prev_hash, row.ts, row.user_id, row.action, row.case_id, row.version_id, row.detail)
-        if row.prev_hash != prev_hash or row.hash != expected:
+        if row.prev_hash != prev_hash or row.hash != _row_hash(prev_hash, row):
             return {"ok": False, "rows": len(rows), "first_bad_id": row.id}
         prev_hash = row.hash
-    return {"ok": True, "rows": len(rows)}
+    head = rows[-1] if rows else None
+    return {"ok": True, "rows": len(rows), "head_id": head.id if head else None, "head_hash": prev_hash}

@@ -1,6 +1,9 @@
+import io
 import shutil
 import uuid
 from pathlib import Path
+
+from PIL import Image, UnidentifiedImageError
 
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
@@ -13,10 +16,27 @@ from backend.errors import AppError
 from backend.models import Case, ChatMessage, FaceVersion, User
 
 FIRST_FACE_REPLY = "Here is the first face. Tell me what to change."
+NEW_FACE_REPLY = "Here is a new face from the updated description. Tell me what to change."
 
 
 def image_file(settings: Settings, rel_path: str) -> Path:
     return settings.storage_dir / rel_path
+
+
+def existing_image_file(settings: Settings, rel_path: str) -> Path:
+    path = image_file(settings, rel_path)
+    if not path.is_file():
+        raise AppError("NOT_FOUND", "The image file for this version is missing.", 404)
+    return path
+
+
+def check_image(data: bytes) -> None:
+    """Reject bytes that are not a readable image before anything is stored."""
+    try:
+        with Image.open(io.BytesIO(data)) as img:
+            img.verify()
+    except (UnidentifiedImageError, OSError, SyntaxError, ValueError):
+        raise AppError("AI_UNAVAILABLE", "The image service returned an unreadable image. Try again.", 503)
 
 
 def save_image(settings: Settings, case_id: int, version_no: int, data: bytes) -> str:
@@ -51,6 +71,10 @@ def _commit_version(
         session.rollback()
         image_file(settings, version.image_path).unlink(missing_ok=True)
         raise AppError("CONFLICT", "Another change is in progress. Reload and try again.", 409)
+    except Exception:
+        session.rollback()
+        image_file(settings, version.image_path).unlink(missing_ok=True)
+        raise
     session.refresh(version)
     return version
 
@@ -66,6 +90,7 @@ def generate_face(
     attrs = ai.extract_attributes(description)
     prompt = build_image_prompt(attrs)
     image = ai.generate_image(prompt)
+    check_image(image)
     version_no, parent_id = _new_version_no(session, case.id)
     version = FaceVersion(
         case_id=case.id,
@@ -78,7 +103,8 @@ def generate_face(
         image_path=save_image(settings, case.id, version_no, image),
         created_by=user.id,
     )
-    return _commit_version(session, settings, version, [("user", description), ("assistant", FIRST_FACE_REPLY)])
+    reply = FIRST_FACE_REPLY if version_no == 1 else NEW_FACE_REPLY
+    return _commit_version(session, settings, version, [("user", description), ("assistant", reply)])
 
 
 def refine_face(
@@ -95,7 +121,8 @@ def refine_face(
         return None, plan.reply
     attrs = apply_edits(Attributes(**current.attributes), plan.edits)
     prompt = build_edit_prompt(plan.edits)
-    image = ai.edit_image(image_file(settings, current.image_path).read_bytes(), prompt)
+    image = ai.edit_image(existing_image_file(settings, current.image_path).read_bytes(), prompt)
+    check_image(image)
     version = FaceVersion(
         case_id=case.id,
         parent_id=current.id,
@@ -116,7 +143,7 @@ def revert_face(session: Session, settings: Settings, case: Case, user: User, ve
         raise AppError("NOT_FOUND", "Version not found.", 404)
     version_no, parent_id = _new_version_no(session, case.id)
     rel = f"cases/{case.id}/v{version_no}-{uuid.uuid4().hex[:8]}.png"
-    shutil.copyfile(image_file(settings, source.image_path), image_file(settings, rel))
+    shutil.copyfile(existing_image_file(settings, source.image_path), image_file(settings, rel))
     version = FaceVersion(
         case_id=case.id,
         parent_id=parent_id,

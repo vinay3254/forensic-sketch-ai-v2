@@ -102,5 +102,6 @@ def image(
     session: Session = Depends(get_session),
 ):
     v = version_of_case(session, case, version_id)
+    path = service.existing_image_file(request.app.state.settings, v.image_path)
     record(session, request, "image_view", user, case_id=case.id, version_id=v.id)
-    return FileResponse(service.image_file(request.app.state.settings, v.image_path), media_type="image/png")
+    return FileResponse(path, media_type="image/png")

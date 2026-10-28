@@ -42,7 +42,7 @@ def extract_json(text: str) -> dict:
 
 
 def _map_openai_error(e: Exception) -> AppError:
-    if isinstance(e, openai.BadRequestError) and re.search(r"safety|policy|content", str(e), re.I):
+    if isinstance(e, openai.BadRequestError) and re.search(r"safety|policy|moderation|content[_ ]filter", str(e), re.I):
         return AppError("AI_REFUSED", "The image service refused this request. Try rewording the description.", 422)
     return AppError("AI_UNAVAILABLE", "The AI service did not respond. Try again.", 503)
 

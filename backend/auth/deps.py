@@ -5,16 +5,22 @@ from backend.audit.logger import record
 from backend.auth.security import decode_token
 from backend.db import get_session
 from backend.errors import AppError
-from backend.models import Case, User
+from backend.models import Case, RevokedToken, User
 
 COOKIE_NAME = "session"
 
 
-def current_user(request: Request, session: Session = Depends(get_session)) -> User:
+def session_claims(request: Request, session: Session = Depends(get_session)) -> dict:
     token = request.cookies.get(COOKIE_NAME)
     if not token:
         raise AppError("UNAUTHENTICATED", "Please log in.", 401)
     claims = decode_token(token, request.app.state.settings)
+    if "jti" not in claims or session.get(RevokedToken, claims["jti"]) is not None:
+        raise AppError("UNAUTHENTICATED", "Session expired or invalid. Please log in again.", 401)
+    return claims
+
+
+def current_user(claims: dict = Depends(session_claims), session: Session = Depends(get_session)) -> User:
     user = session.get(User, int(claims["sub"]))
     if user is None:
         raise AppError("UNAUTHENTICATED", "Please log in.", 401)

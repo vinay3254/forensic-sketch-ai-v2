@@ -36,6 +36,13 @@ class User(SQLModel, table=True):
     created_at: datetime = ts_field()
 
 
+class RevokedToken(SQLModel, table=True):
+    """Sessions ended by logout; checked on every request until the token would have expired anyway."""
+
+    jti: str = Field(primary_key=True)
+    expires_at: datetime = Field(sa_column=Column(UTCDateTime(), nullable=False))
+
+
 class Case(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     case_number: str = Field(unique=True)

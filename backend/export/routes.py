@@ -12,7 +12,7 @@ from backend.auth.deps import current_user, require_case_access
 from backend.db import get_session
 from backend.export.render import stamp_footer, to_sketch, upscale
 from backend.face.routes import version_of_case
-from backend.face.service import image_file
+from backend.face.service import existing_image_file
 from backend.models import Case, User
 
 router = APIRouter(prefix="/api/cases/{case_id}", tags=["export"])
@@ -28,7 +28,7 @@ def export(
     session: Session = Depends(get_session),
 ):
     v = version_of_case(session, case, version_id)
-    img = upscale(Image.open(image_file(request.app.state.settings, v.image_path)).convert("RGB"))
+    img = upscale(Image.open(existing_image_file(request.app.state.settings, v.image_path)).convert("RGB"))
     if style == "sketch":
         img = to_sketch(img)
     exported_at = datetime.now(UTC).isoformat(timespec="seconds")

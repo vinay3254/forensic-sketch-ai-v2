@@ -42,7 +42,21 @@ def list_audit(
     ).all()
     # snapshot before recording, so the viewer's own row doesn't shift the page
     items = [i.model_dump() for i in items]
-    record(session, request, "audit_view", user, detail={"filters": {"case_id": case_id, "action": action}})
+    record(
+        session,
+        request,
+        "audit_view",
+        user,
+        detail={
+            "filters": {
+                "case_id": case_id,
+                "user_id": user_id,
+                "action": action,
+                "since": since.isoformat() if since else None,
+                "until": until.isoformat() if until else None,
+            }
+        },
+    )
     return {"items": items, "total": total}
 
 

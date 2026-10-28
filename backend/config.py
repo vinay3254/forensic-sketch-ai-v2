@@ -1,13 +1,14 @@
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    jwt_secret: str
+    jwt_secret: str = Field(min_length=32)  # HS256 key; short secrets are brute-forceable
     jwt_expiry_hours: int = 8
     cookie_secure: bool = True
     database_url: str = "sqlite:///./app.db"
