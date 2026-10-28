@@ -19,7 +19,14 @@ export default function AttributePanel({ caseId, version, busy, onMakePhoto }: P
           {ATTRIBUTE_KEYS.map((k) => (
             <div key={k} className="contents">
               <dt className="text-slate-500">{label(k)}</dt>
-              <dd>{version.attributes[k] ?? '—'}</dd>
+              <dd>
+                {version.attributes[k] ?? '—'}
+                {version.uncertain.includes(k) && (
+                  <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800" title="The witness was unsure about this">
+                    uncertain
+                  </span>
+                )}
+              </dd>
             </div>
           ))}
         </dl>

@@ -44,6 +44,8 @@ export interface Version {
   created_at: string
   image_url: string
   photo_url: string | null
+  interview_id: number | null
+  uncertain: string[]
 }
 
 export interface ChatMsg {

@@ -25,17 +25,17 @@ Spec: `docs/superpowers/specs/2026-10-28-smart-witness-interview-design.md`. Bui
 | 4 | Speech-to-text (browser Web Speech API, `en-IN` default; en-US, Hindi, Kannada) | done |
 | 5 | Optional extras step (facial hair, hairstyle, glasses, distinguishing features) | done |
 | 6 | Review & confirm (lock transcript, SHA-256 in audit) | done |
-| 7 | Generate sketch from confirmed interview (unknown → blank, uncertain flagged) | **next, waiting for go-ahead** |
-| 8 | Option B: AI marks features already covered, exact quotes only, off by default | not started |
+| 7 | Generate sketch from confirmed interview (unknown → blank, uncertain flagged) | done |
+| 8 | Option B: AI marks features already covered, exact quotes only, off by default | **next, waiting for go-ahead** |
 
-Until feature 7 lands, sketches are still generated from the old single description box, which sits under the interview bar on the case page.
+Sketches can be generated from a confirmed interview ("Confirm & generate sketch") or, as before, from the single description box on the case page.
 
 ## Environment notes
 
 - `.env` (not in git) is set to live mode: chat `auto/best-fast`, image `codex/gpt-5.6-luna-image`, edits `codex/gpt-5.6-luna` via `LLM_IMAGE_EDIT_API=responses`. The Codex login behind it expires periodically; refresh it before a demo.
 - Codex `gpt-image-2*` models fail (no paid credits on the account). `antigravity/gemini-3.1-flash-image` is a working fallback (faster, ~20 s).
 - Each live image call takes about 35–60 s.
-- No DB migrations: after adding a column to an existing table, delete `app.db` and run `uv run python -m backend.seed`.
+- No DB migrations: new nullable columns are added automatically at startup; any other schema change needs `app.db` deleted and `uv run python -m backend.seed`.
 - If a new frontend file shows up unstyled in dev, restart `npm run dev`.
 
 ## Known issues

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { confirmInterview, getInterview, interviewQuestions, saveInterview } from '../api'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { confirmInterview, generateFromInterview, getInterview, interviewQuestions, saveInterview } from '../api'
 import AnswerBox, { MAX_TEXT } from '../components/AnswerBox'
 import InterviewReview from '../components/InterviewReview'
 import type { InputSource, InterviewDraft, RecallStatus } from '../types'
@@ -26,6 +26,7 @@ export default function InterviewPage() {
   const caseId = Number(useParams().id)
   const interviewId = Number(useParams().iid)
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const bank = useQuery({ queryKey: ['interview-questions'], queryFn: interviewQuestions, staleTime: Infinity })
   const interview = useQuery({
     queryKey: ['interview', caseId, interviewId],
@@ -89,6 +90,16 @@ export default function InterviewPage() {
       dirty.current = false
       queryClient.setQueryData(['interview', caseId, interviewId], iv)
       queryClient.invalidateQueries({ queryKey: ['interviews', caseId] })
+      sketch.mutate()
+    },
+  })
+
+  // a failure here leaves the interview confirmed; the button on the locked review retries
+  const sketch = useMutation({
+    mutationFn: () => generateFromInterview(caseId, interviewId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['case', caseId] })
+      navigate(`/cases/${caseId}`)
     },
   })
 
@@ -202,9 +213,11 @@ export default function InterviewPage() {
               entries={entries}
               interview={interview.data}
               confirming={confirm.isPending}
-              error={confirm.error?.message ?? null}
+              generating={sketch.isPending}
+              error={(confirm.error ?? sketch.error)?.message ?? null}
               onEdit={setStep}
               onConfirm={() => confirm.mutate()}
+              onGenerate={() => sketch.mutate()}
             />
           </section>
         ) : (

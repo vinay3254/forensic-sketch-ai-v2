@@ -13,7 +13,8 @@ from backend.ai.prompts import apply_edits, build_edit_prompt, build_image_promp
 from backend.ai.schemas import Attributes
 from backend.config import Settings
 from backend.errors import AppError
-from backend.models import Case, ChatMessage, FaceVersion, User
+from backend.interview.transcript import fields_with_status, render_description
+from backend.models import Case, ChatMessage, FaceVersion, Interview, User
 
 FIRST_FACE_REPLY = "Here is the first face. Tell me what to change."
 NEW_FACE_REPLY = "Here is a new face from the updated description. Tell me what to change."
@@ -102,9 +103,25 @@ def _new_version_no(session: Session, case_id: int) -> tuple[int, int | None]:
 
 
 def generate_face(
-    session: Session, ai: AIClient, settings: Settings, case: Case, user: User, description: str
+    session: Session,
+    ai: AIClient,
+    settings: Settings,
+    case: Case,
+    user: User,
+    description: str | None = None,
+    interview: Interview | None = None,
 ) -> FaceVersion:
-    attrs = ai.extract_attributes(description)
+    """First (or replacement) sketch, from a typed description or a confirmed interview."""
+    uncertain = None
+    if interview is not None:
+        iv = interview.model_dump()
+        description = render_description(iv)
+        attrs = ai.extract_attributes(description)
+        # a feature the witness said they don't remember stays blank, whatever the extractor read
+        attrs = attrs.model_copy(update={f: None for f in fields_with_status(iv, "unknown")})
+        uncertain = fields_with_status(iv, "uncertain")
+    else:
+        attrs = ai.extract_attributes(description)
     prompt = build_image_prompt(attrs)
     image = normalize_image(ai.generate_image(prompt), settings.llm_image_size)
     version_no, parent_id = _new_version_no(session, case.id)
@@ -113,14 +130,17 @@ def generate_face(
         parent_id=parent_id,
         version_no=version_no,
         kind="generate",
-        instruction=description,
+        instruction=f"From witness interview #{interview.id}" if interview else description,
         attributes=attrs.model_dump(),
         prompt=prompt,
         image_path=save_image(settings, case.id, version_no, image),
         created_by=user.id,
+        interview_id=interview.id if interview else None,
+        uncertain=uncertain,
     )
     reply = FIRST_FACE_REPLY if version_no == 1 else NEW_FACE_REPLY
-    return _commit_version(session, settings, version, [("user", description), ("assistant", reply)])
+    said = f"Witness interview #{interview.id} (confirmed)" if interview else description
+    return _commit_version(session, settings, version, [("user", said), ("assistant", reply)])
 
 
 def refine_face(
@@ -145,6 +165,8 @@ def refine_face(
         version_no=current.version_no + 1,
         kind="refine",
         instruction=message,
+        # the witness has just described the edited features, so they are no longer flagged
+        uncertain=[f for f in current.uncertain or [] if f not in {e.region for e in plan.edits}] or None,
         attributes=attrs.model_dump(),
         prompt=prompt,
         image_path=save_image(settings, case.id, current.version_no + 1, image),
@@ -167,6 +189,7 @@ def revert_face(session: Session, settings: Settings, case: Case, user: User, ve
         kind="revert",
         instruction=f"Revert to v{source.version_no}",
         attributes=dict(source.attributes),
+        uncertain=source.uncertain,
         prompt=source.prompt,
         image_path=rel,
         created_by=user.id,

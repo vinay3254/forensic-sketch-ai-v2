@@ -65,6 +65,9 @@ class FaceVersion(SQLModel, table=True):
     prompt: str
     image_path: str
     photo_path: str | None = None  # realistic photo made from this sketch, on request
+    interview_id: int | None = Field(default=None, foreign_key="interview.id")  # set when made from an interview
+    # attribute names the witness was unsure about; carried through refines and reverts
+    uncertain: list | None = Field(default=None, sa_column=Column(JSON, nullable=True))
     created_by: int = Field(foreign_key="user.id")
     created_at: datetime = ts_field()
 

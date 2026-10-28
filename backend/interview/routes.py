@@ -5,10 +5,13 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field, field_validator
 from sqlmodel import Session, select
 
+from backend.ai.client import AIClient, get_ai_client
 from backend.audit.logger import record
 from backend.auth.deps import current_user, require_case_access
+from backend.cases.routes import VersionOut
 from backend.db import get_session
 from backend.errors import AppError
+from backend.face import service as face_service
 from backend.interview.questions import EXTRAS, FEATURES, FREE_RECALL, PROMPTS
 from backend.interview.transcript import has_content, in_question_order, transcript_hash
 from backend.models import Case, Interview, User, utcnow
@@ -156,3 +159,28 @@ def confirm(
         detail={"interview_id": iv.id, "transcript_hash": iv.transcript_hash},
     )
     return InterviewOut(**iv.model_dump())
+
+
+@router.post("/api/cases/{case_id}/interviews/{interview_id}/generate", response_model=VersionOut)
+def generate_from_interview(
+    interview_id: int,
+    request: Request,
+    case: Case = Depends(require_case_access),
+    user: User = Depends(current_user),
+    session: Session = Depends(get_session),
+    ai: AIClient = Depends(get_ai_client),
+):
+    """Draw the sketch from the confirmed transcript. A failure leaves the interview confirmed; retrying is safe."""
+    iv = interview_of_case(session, case, interview_id)
+    if iv.status != "confirmed":
+        raise AppError("CONFLICT", "The witness must confirm the transcript before a sketch is generated.", 409)
+    try:
+        v = face_service.generate_face(session, ai, request.app.state.settings, case, user, interview=iv)
+    except AppError as e:
+        record(session, request, "generate", user, case_id=case.id, detail={"outcome": e.code, "interview_id": iv.id})
+        raise
+    record(
+        session, request, "generate", user, case_id=case.id, version_id=v.id,
+        detail={"outcome": "ok", "interview_id": iv.id},
+    )
+    return VersionOut.of(v)

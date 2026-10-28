@@ -19,12 +19,27 @@ interface Props {
   entries: Record<string, Entry>
   interview: Interview
   confirming: boolean
+  generating: boolean
   error: string | null
   onEdit: (step: number) => void
   onConfirm: () => void
+  onGenerate: () => void
 }
 
-export default function InterviewReview({ freePrompt, freeRecall, freeSource, questions, entries, interview, confirming, error, onEdit, onConfirm }: Props) {
+export default function InterviewReview({
+  freePrompt,
+  freeRecall,
+  freeSource,
+  questions,
+  entries,
+  interview,
+  confirming,
+  generating,
+  error,
+  onEdit,
+  onConfirm,
+  onGenerate,
+}: Props) {
   const [witnessConfirmed, setWitnessConfirmed] = useState(false)
   const locked = interview.status !== 'draft'
   const asked = questions.map((q, i) => ({ q, step: i + 1, e: entries[q.key] })).filter(({ e }) => e && (e.answer.trim() || e.status))
@@ -37,6 +52,16 @@ export default function InterviewReview({ freePrompt, freeRecall, freeSource, qu
         <div className="rounded-lg border border-green-300 bg-green-50 p-4 text-sm text-green-900">
           <p className="font-medium">Confirmed by the witness{interview.confirmed_at && ` on ${new Date(interview.confirmed_at).toLocaleString()}`}. This transcript is locked.</p>
           <p className="mt-1 break-all font-mono text-xs">SHA-256 {interview.transcript_hash}</p>
+          <div className="mt-3 flex items-center gap-3">
+            <button
+              onClick={onGenerate}
+              disabled={generating}
+              className="rounded bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-50"
+            >
+              {generating ? 'Drawing the sketch… this can take up to a minute' : 'Generate sketch from this interview'}
+            </button>
+          </div>
+          {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
         </div>
       ) : (
         <p className="rounded bg-blue-50 p-3 text-sm text-blue-900">
@@ -97,9 +122,12 @@ export default function InterviewReview({ freePrompt, freeRecall, freeSource, qu
             disabled={!witnessConfirmed || confirming || empty}
             className="rounded bg-slate-900 px-4 py-2 text-sm text-white disabled:opacity-50"
           >
-            {confirming ? 'Confirming…' : 'Confirm transcript'}
+            {confirming ? 'Confirming…' : 'Confirm & generate sketch'}
           </button>
-          <p className="text-xs text-slate-500">After confirming, the transcript can no longer be changed.</p>
+          <p className="text-xs text-slate-500">
+            After confirming, the transcript can no longer be changed. The sketch is drawn only from the confirmed words; features
+            marked "Don't know" are left out.
+          </p>
         </div>
       )}
     </div>
