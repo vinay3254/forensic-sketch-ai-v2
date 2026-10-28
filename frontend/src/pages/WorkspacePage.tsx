@@ -5,6 +5,7 @@ import { ApiError, generate, getCase, makePhoto, refine, revert } from '../api'
 import AttributePanel from '../components/AttributePanel'
 import DescriptionForm from '../components/DescriptionForm'
 import FaceCanvas, { type View } from '../components/FaceCanvas'
+import InterviewLauncher from '../components/InterviewLauncher'
 import RefineChat from '../components/RefineChat'
 import VersionStrip from '../components/VersionStrip'
 
@@ -74,6 +75,7 @@ export default function WorkspacePage() {
           )}
         </div>
       )}
+      <InterviewLauncher caseId={caseId} />
       <div className="grid gap-6 lg:grid-cols-[22rem_1fr_18rem]">
         <section className="h-[36rem] rounded-lg bg-white p-4 shadow">
           {showForm ? (

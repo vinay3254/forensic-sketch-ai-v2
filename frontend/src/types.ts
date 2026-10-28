@@ -118,3 +118,47 @@ export const AUDIT_ACTIONS = [
   'audit_view',
   'access_denied',
 ] as const
+
+export type RecallStatus = 'remembered' | 'uncertain' | 'unknown'
+export type InputSource = 'typed' | 'speech' | 'mixed'
+
+export interface Question {
+  key: string
+  label: string
+  prompt: string
+  optional: boolean
+}
+
+export interface QuestionBank {
+  free_recall: { key: string; label: string; prompt: string; guidance: string }
+  features: Question[]
+  extras: Question[]
+}
+
+export interface Answer {
+  key: string
+  prompt: string
+  answer: string
+  status: RecallStatus | null
+  source: InputSource | null
+}
+
+export interface Interview {
+  id: number
+  case_id: number
+  status: 'draft' | 'confirmed'
+  free_recall: string
+  free_recall_source: InputSource | null
+  answers: Answer[]
+  created_by: number
+  created_at: string
+  confirmed_by: number | null
+  confirmed_at: string | null
+  transcript_hash: string | null
+}
+
+export interface InterviewDraft {
+  free_recall: string
+  free_recall_source: InputSource | null
+  answers: Omit<Answer, 'prompt'>[]
+}

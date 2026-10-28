@@ -4,6 +4,7 @@ import { Link, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import { logout, me } from './api'
 import AuditPage from './pages/AuditPage'
 import CasesPage from './pages/CasesPage'
+import InterviewPage from './pages/InterviewPage'
 import LoginPage from './pages/LoginPage'
 import WorkspacePage from './pages/WorkspacePage'
 import type { User } from './types'
@@ -66,6 +67,7 @@ export default function App() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/cases" element={<Guard><CasesPage /></Guard>} />
       <Route path="/cases/:id" element={<Guard><WorkspacePage /></Guard>} />
+      <Route path="/cases/:id/interviews/:iid" element={<Guard><InterviewPage /></Guard>} />
       <Route path="/audit" element={<Guard admin><AuditPage /></Guard>} />
       <Route path="*" element={<Navigate to="/cases" replace />} />
     </Routes>

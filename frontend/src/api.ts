@@ -4,6 +4,9 @@ import type {
   AuditVerify,
   Case,
   CaseDetail,
+  Interview,
+  InterviewDraft,
+  QuestionBank,
   RefineResult,
   User,
   Version,
@@ -72,3 +75,10 @@ export function auditList(filters: AuditFilters) {
   return request<AuditPage>(`/api/audit?${params}`)
 }
 export const auditVerify = () => request<AuditVerify>('/api/audit/verify')
+
+export const interviewQuestions = () => request<QuestionBank>('/api/interview/questions')
+export const listInterviews = (caseId: number) => request<Interview[]>(`/api/cases/${caseId}/interviews`)
+export const startInterview = (caseId: number) => post<Interview>(`/api/cases/${caseId}/interviews`)
+export const getInterview = (caseId: number, id: number) => request<Interview>(`/api/cases/${caseId}/interviews/${id}`)
+export const saveInterview = (caseId: number, id: number, draft: InterviewDraft) =>
+  request<Interview>(`/api/cases/${caseId}/interviews/${id}`, { method: 'PUT', body: JSON.stringify(draft) })
