@@ -1,5 +1,7 @@
+import { Camera, Download, ScanFace } from 'lucide-react'
 import { exportUrl } from '../api'
 import { ATTRIBUTE_KEYS, type Version } from '../types'
+import { Button, buttonClass, CardHeader } from './ui'
 
 const label = (key: string) => key.replace('_', ' ').replace(/^\w/, (c) => c.toUpperCase())
 
@@ -11,39 +13,53 @@ interface Props {
 }
 
 export default function AttributePanel({ caseId, version, busy, onMakePhoto }: Props) {
+  const filled = version ? ATTRIBUTE_KEYS.filter((k) => version.attributes[k]) : []
+  const empty = version ? ATTRIBUTE_KEYS.filter((k) => !version.attributes[k]) : []
   return (
-    <div className="space-y-4">
-      <h2 className="font-semibold">Attributes</h2>
-      {version ? (
-        <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-sm">
-          {ATTRIBUTE_KEYS.map((k) => (
-            <div key={k} className="contents">
-              <dt className="text-slate-500">{label(k)}</dt>
-              <dd>{version.attributes[k] ?? '—'}</dd>
-            </div>
-          ))}
-        </dl>
-      ) : (
-        <p className="text-sm text-slate-500">—</p>
-      )}
+    <div className="flex h-full flex-col">
+      <CardHeader
+        title="Attributes"
+        icon={<ScanFace className="size-4" />}
+        action={version && <span className="text-[11px] text-ink-400">{filled.length} of {ATTRIBUTE_KEYS.length} described</span>}
+      />
+      <div className="flex-1 px-5 py-4">
+        {version ? (
+          <>
+            <dl className="space-y-2.5">
+              {filled.map((k) => (
+                <div key={k}>
+                  <dt className="text-[11px] font-medium uppercase tracking-wider text-ink-400">{label(k)}</dt>
+                  <dd className="text-sm text-ink-900">{version.attributes[k]}</dd>
+                </div>
+              ))}
+            </dl>
+            {empty.length > 0 && (
+              <p className="mt-4 border-t border-dashed border-paper-300 pt-3 text-[11px] leading-relaxed text-ink-400">
+                Not described: {empty.map(label).join(', ')}
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="text-sm text-ink-500">Attributes the AI extracts from the description will be listed here.</p>
+        )}
+      </div>
       {version && (
-        <div className="flex flex-wrap gap-2">
-          <a href={exportUrl(caseId, version.id, 'sketch')} download className="rounded bg-slate-900 px-3 py-2 text-sm text-white">
+        <div className="space-y-2 border-t border-paper-200 p-4">
+          <a href={exportUrl(caseId, version.id, 'sketch')} download className={`${buttonClass('primary')} w-full`}>
+            <Download className="size-4" />
             Export sketch
           </a>
           {version.photo_url ? (
-            <a href={exportUrl(caseId, version.id, 'photo')} download className="rounded border border-slate-900 px-3 py-2 text-sm">
-              Export photo
+            <a href={exportUrl(caseId, version.id, 'photo')} download className={`${buttonClass('secondary')} w-full`}>
+              <Download className="size-4" />
+              Export realistic photo
             </a>
           ) : (
-            <button
-              onClick={onMakePhoto}
-              disabled={busy}
-              className="rounded border border-slate-900 px-3 py-2 text-sm disabled:opacity-50"
-            >
+            <Button variant="secondary" className="w-full" onClick={onMakePhoto} disabled={busy} icon={<Camera className="size-4" />}>
               Make realistic photo
-            </button>
+            </Button>
           )}
+          <p className="pt-1 text-center text-[10px] text-ink-400">Exports carry the case number, version and your name.</p>
         </div>
       )}
     </div>

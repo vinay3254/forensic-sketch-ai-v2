@@ -1,5 +1,64 @@
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
 @import 'tailwindcss';
 
-body {
-  @apply bg-slate-100 text-slate-900;
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+
+  /* ink: headers, primary actions. paper: page and drawing surface. brass: accent */
+  --color-ink-950: #0b0f17;
+  --color-ink-900: #121826;
+  --color-ink-800: #1c2333;
+  --color-ink-700: #2a3346;
+  --color-ink-500: #5b6478;
+  --color-ink-400: #8a92a6;
+  --color-ink-300: #b6bccb;
+  --color-paper-50: #fbfaf7;
+  --color-paper-100: #f5f3ee;
+  --color-paper-200: #ebe7de;
+  --color-paper-300: #ddd7ca;
+  --color-brass-400: #d4a64a;
+  --color-brass-500: #b8862b;
+  --color-brass-600: #96691c;
+
+  --shadow-card: 0 1px 2px rgb(11 15 23 / 0.04), 0 4px 16px -4px rgb(11 15 23 / 0.08);
+  --shadow-lift: 0 2px 4px rgb(11 15 23 / 0.06), 0 16px 40px -12px rgb(11 15 23 / 0.25);
+
+  --animate-in: fade-in 0.4s ease-out;
+  @keyframes fade-in {
+    from { opacity: 0; transform: scale(0.985); }
+    to { opacity: 1; transform: scale(1); }
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-paper-100 font-sans text-ink-900 antialiased;
+  }
+  ::selection {
+    @apply bg-brass-400/30;
+  }
+}
+
+@utility paper-grain {
+  /* faint paper texture behind the sketch */
+  background-color: #fdfcf9;
+  background-image:
+    radial-gradient(rgb(11 15 23 / 0.035) 1px, transparent 1px),
+    radial-gradient(rgb(11 15 23 / 0.025) 1px, transparent 1px);
+  background-size: 7px 7px, 11px 11px;
+  background-position: 0 0, 3px 5px;
+}
+
+@utility grid-lines {
+  background-image:
+    linear-gradient(rgb(255 255 255 / 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 0.04) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+@keyframes shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
 }
