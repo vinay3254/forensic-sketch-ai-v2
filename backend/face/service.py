@@ -112,8 +112,10 @@ def generate_face(
     user: User,
     description: str | None = None,
     interview: Interview | None = None,
+    original: str | None = None,
 ) -> FaceVersion:
-    """First (or replacement) sketch, from a typed description or a confirmed interview."""
+    """First (or replacement) sketch, from a typed description or a confirmed interview.
+    `original` is the witness's words when `description` is their English translation."""
     uncertain = None
     if interview is not None:
         iv = interview.model_dump()
@@ -133,7 +135,7 @@ def generate_face(
         parent_id=parent_id,
         version_no=version_no,
         kind="generate",
-        instruction=f"From witness interview #{interview.id}" if interview else description,
+        instruction=f"From witness interview #{interview.id}" if interview else original or description,
         attributes=attrs.model_dump(),
         prompt=prompt,
         image_path=save_image(settings, case.id, version_no, image),
@@ -142,7 +144,7 @@ def generate_face(
         uncertain=uncertain,
     )
     reply = FIRST_FACE_REPLY if version_no == 1 else NEW_FACE_REPLY
-    said = f"Witness interview #{interview.id} (confirmed)" if interview else description
+    said = f"Witness interview #{interview.id} (confirmed)" if interview else original or description
     return _commit_version(session, settings, version, [("user", said), ("assistant", reply)])
 
 

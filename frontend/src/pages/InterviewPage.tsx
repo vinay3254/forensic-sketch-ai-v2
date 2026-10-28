@@ -1,14 +1,30 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { assistInterview, confirmInterview, generateFromInterview, getInterview, interviewQuestions, saveInterview } from '../api'
+import { assistInterview, confirmInterview, generateFromInterview, getInterview, interviewQuestions, saveInterview, translateText } from '../api'
 import AnswerBox, { MAX_TEXT } from '../components/AnswerBox'
 import InterviewReview from '../components/InterviewReview'
-import type { InputSource, InterviewDraft, RecallStatus } from '../types'
+import { isEnglish, type InputSource, type InterviewDraft, type RecallStatus } from '../types'
 
 const SAVE_DELAY_MS = 800
 
-type Entry = { answer: string; status: RecallStatus | null; source: InputSource | null }
+type Entry = {
+  answer: string
+  status: RecallStatus | null
+  source: InputSource | null
+  lang?: string | null // language the words were given in
+  english?: string | null // their translation; cleared whenever the words change
+}
+const FREE = '__free__' // the free account, keyed like an answer for translation
+
+const LANG_KEY = 'trace.speechLang'
+const savedLang = () => {
+  try {
+    return localStorage.getItem(LANG_KEY) ?? 'en-IN'
+  } catch {
+    return 'en-IN'
+  }
+}
 
 const STATUSES: { value: RecallStatus; label: string; hint: string; on: string; dot: string }[] = [
   { value: 'remembered', label: 'Remembered', hint: 'The witness is clear about this', on: 'bg-green-600 text-white border-green-600', dot: 'bg-green-500' },
@@ -36,19 +52,40 @@ export default function InterviewPage() {
 
   const [freeRecall, setFreeRecall] = useState('')
   const [freeSource, setFreeSource] = useState<InputSource | null>(null)
+  const [freeLang, setFreeLang] = useState<string | null>(null)
+  const [freeEnglish, setFreeEnglish] = useState<string | null>(null)
+  const [translating, setTranslating] = useState<string | null>(null) // key being translated
+  const [translateError, setTranslateError] = useState<{ key: string; message: string } | null>(null)
   const [entries, setEntries] = useState<Record<string, Entry>>({})
   const [step, setStep] = useState(0)
-  const [lang, setLang] = useState('en-IN')
+  const [lang, setLangState] = useState(savedLang)
+  const setLang = (l: string) => {
+    setLangState(l)
+    try {
+      localStorage.setItem(LANG_KEY, l)
+    } catch {
+      /* private mode: the picker just resets */
+    }
+  }
   const [loaded, setLoaded] = useState(false)
   const [assistOn, setAssistOn] = useState(false) // Option B is off until the officer turns it on
   const dirty = useRef(false)
+  // translation reads the latest words through this: it can run right after the last dictated phrase lands
+  const latest = useRef({ freeRecall, freeLang, entries })
+  latest.current = { freeRecall, freeLang, entries }
 
   // take the server copy once; after that local edits win and are autosaved
   useEffect(() => {
     if (!interview.data || !bank.data || loaded) return
     setFreeRecall(interview.data.free_recall)
     setFreeSource(interview.data.free_recall_source)
-    setEntries(Object.fromEntries(interview.data.answers.map((a) => [a.key, { answer: a.answer, status: a.status, source: a.source }])))
+    setFreeLang(interview.data.free_recall_lang ?? null)
+    setFreeEnglish(interview.data.free_recall_english ?? null)
+    setEntries(
+      Object.fromEntries(
+        interview.data.answers.map((a) => [a.key, { answer: a.answer, status: a.status, source: a.source, lang: a.lang ?? null, english: a.english ?? null }]),
+      ),
+    )
     // a confirmed interview opens on its transcript
     if (interview.data.status !== 'draft') setStep(bank.data.features.length + bank.data.extras.length + 1)
     setLoaded(true)
@@ -61,6 +98,8 @@ export default function InterviewPage() {
   const draft: InterviewDraft = {
     free_recall: freeRecall,
     free_recall_source: freeSource,
+    free_recall_lang: freeLang,
+    free_recall_english: freeEnglish,
     answers: Object.entries(entries)
       .filter(([, e]) => e.answer !== '' || e.status !== null)
       .map(([key, e]) => ({ key, ...e })),
@@ -135,7 +174,10 @@ export default function InterviewPage() {
   const reviewStep = questions.length + 1
   const total = questions.length + 2
   const question = step === 0 || step === reviewStep ? null : questions[step - 1]
-  const entry: Entry = question ? (entries[question.key] ?? { answer: '', status: null, source: null }) : { answer: freeRecall, status: null, source: freeSource }
+  const entry: Entry = question
+    ? (entries[question.key] ?? { answer: '', status: null, source: null })
+    : { answer: freeRecall, status: null, source: freeSource, lang: freeLang, english: freeEnglish }
+  const entryKey = question ? question.key : FREE
 
   function setStatus(status: RecallStatus | null) {
     if (!question) return
@@ -144,17 +186,43 @@ export default function InterviewPage() {
   }
 
   // `how` records whether the words were typed or dictated; `change` gets the latest text
+  // new words are in the picker's language, and any earlier translation no longer matches them
   function write(how: 'typed' | 'speech', change: (text: string) => string) {
     dirty.current = true
     if (!question) {
       setFreeRecall(change)
       setFreeSource((prev) => mark(prev, how))
+      setFreeLang(lang)
+      setFreeEnglish(null)
       return
     }
     setEntries((prev) => {
       const cur = prev[question.key] ?? { answer: '', status: null, source: null }
-      return { ...prev, [question.key]: { ...cur, answer: change(cur.answer), source: mark(cur.source, how) } }
+      return { ...prev, [question.key]: { ...cur, answer: change(cur.answer), source: mark(cur.source, how), lang, english: null } }
     })
+  }
+
+  async function translate(key: string) {
+    const cur = latest.current
+    const text = key === FREE ? cur.freeRecall : (cur.entries[key]?.answer ?? '')
+    const from = key === FREE ? cur.freeLang : cur.entries[key]?.lang
+    if (!text.trim() || isEnglish(from)) return
+    setTranslating(key)
+    setTranslateError(null)
+    try {
+      const { english } = await translateText(caseId, text, from!)
+      dirty.current = true
+      // keep it only if the words have not changed while it was being translated
+      if (key === FREE) {
+        if (latest.current.freeRecall === text) setFreeEnglish(english)
+      } else {
+        setEntries((prev) => (prev[key]?.answer === text ? { ...prev, [key]: { ...prev[key], english } } : prev))
+      }
+    } catch (e) {
+      setTranslateError({ key, message: e instanceof Error ? e.message : 'Translation failed.' })
+    } finally {
+      setTranslating(null)
+    }
   }
 
   const covered = assistOn ? (assist.data?.covered ?? {}) : {}
@@ -179,7 +247,7 @@ export default function InterviewPage() {
         <p className="rounded bg-slate-200 p-3 text-sm">This interview has been confirmed and is read-only.</p>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[16rem_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
         <nav className="h-fit rounded-lg bg-white p-2 shadow">
           {[{ key: free.key, label: free.label }, ...questions].map((q, i) => {
             const st = i === 0 ? null : entries[q.key]?.status
@@ -223,12 +291,14 @@ export default function InterviewPage() {
         </nav>
 
         {step === reviewStep ? (
-          <section className="rounded-lg bg-white p-6 shadow">
+          <section className="min-w-0 rounded-lg bg-white p-6 shadow">
             <p className="mb-4 text-xs uppercase tracking-wide text-slate-500">Step {total} of {total} · Review &amp; confirm</p>
             <InterviewReview
               freePrompt={free.prompt}
               freeRecall={freeRecall}
               freeSource={freeSource}
+              freeLang={freeLang}
+              freeEnglish={freeEnglish}
               questions={questions}
               entries={entries}
               interview={interview.data}
@@ -241,7 +311,7 @@ export default function InterviewPage() {
             />
           </section>
         ) : (
-          <section className="space-y-4 rounded-lg bg-white p-6 shadow">
+          <section className="min-w-0 space-y-4 rounded-lg bg-white p-6 shadow">
             <p className="text-xs uppercase tracking-wide text-slate-500">
               Step {step + 1} of {total} · {question ? question.label : free.label}
               {question?.optional && ' · optional'}
@@ -277,9 +347,14 @@ export default function InterviewPage() {
               rows={question ? 4 : 9}
               disabled={locked}
               lang={lang}
+              wordsLang={entry.lang ?? null}
+              english={entry.english}
+              translating={translating === entryKey}
+              translateError={translateError?.key === entryKey ? translateError.message : null}
               onLang={setLang}
               onType={(text) => write('typed', () => text)}
               onDictate={(phrase) => write('speech', (text) => append(text, phrase))}
+              onTranslate={() => void translate(entryKey)}
             />
 
             {!question && !locked && (

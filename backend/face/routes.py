@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import FileResponse, Response
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from sqlmodel import Session, select
 
 from backend.ai.client import AIClient, get_ai_client
@@ -12,6 +12,7 @@ from backend.errors import AppError
 from backend.face import service
 from backend.face.proportions import Adjust
 from backend.models import Case, FaceVersion, User
+from backend.translate import LANGUAGES, check_language, needs_translation, to_english
 
 router = APIRouter(prefix="/api/cases/{case_id}", tags=["face"])
 
@@ -20,6 +21,9 @@ MAX_TEXT = 2000
 
 class GenerateIn(BaseModel):
     description: str = Field(min_length=1, max_length=MAX_TEXT)
+    lang: str | None = None  # the language the description was spoken in; translated to English first
+
+    _lang = field_validator("lang")(classmethod(lambda cls, v: check_language(v)))
 
 
 class RefineIn(BaseModel):
@@ -43,7 +47,11 @@ def generate(
     ai: AIClient = Depends(get_ai_client),
 ):
     try:
-        v = service.generate_face(session, ai, request.app.state.settings, case, user, body.description)
+        english, original = body.description, None
+        if needs_translation(body.lang):
+            english = to_english(ai, body.description, body.lang)
+            original = f"{body.description}\n({LANGUAGES[body.lang]}) → {english}"
+        v = service.generate_face(session, ai, request.app.state.settings, case, user, english, original=original)
     except AppError as e:
         record(session, request, "generate", user, case_id=case.id, detail={"outcome": e.code})
         raise

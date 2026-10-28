@@ -181,7 +181,9 @@ class Interview(SQLModel, table=True):
     status: str = "draft"  # "draft" | "confirmed"
     free_recall: str = ""
     free_recall_source: str | None = None  # "typed" | "speech" | "mixed"
-    # [{key, prompt, answer, status, source}]; prompt is copied from the fixed bank
+    free_recall_lang: str | None = None  # set only when the witness spoke another language (backend/translate.py)
+    free_recall_english: str | None = None  # its English translation, which the sketch is made from
+    # [{key, prompt, answer, status, source[, lang, english]}]; prompt is copied from the fixed bank
     answers: list = Field(default_factory=list, sa_column=Column(JSON, nullable=False))
     created_by: int = Field(foreign_key="user.id")
     created_at: datetime = ts_field()

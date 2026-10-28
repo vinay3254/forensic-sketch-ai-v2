@@ -22,7 +22,7 @@ import RefineChat from '../components/RefineChat'
 import type { Proportions, Version } from '../types'
 
 type Action =
-  | { kind: 'generate'; text: string }
+  | { kind: 'generate'; text: string; lang?: string }
   | { kind: 'refine'; text: string }
   | { kind: 'revert'; versionId: number }
   | { kind: 'photo'; versionId: number }
@@ -79,7 +79,7 @@ export default function WorkspacePage() {
 
   const mutation = useMutation({
     mutationFn: async (action: Action) => {
-      if (action.kind === 'generate') return generate(caseId, action.text)
+      if (action.kind === 'generate') return generate(caseId, action.text, action.lang)
       if (action.kind === 'refine')
         return (await refine(caseId, action.text)).version
       if (action.kind === 'photo') return makePhoto(caseId, action.versionId)
@@ -149,7 +149,7 @@ export default function WorkspacePage() {
               }
               busy={busy}
               replacing={!!latest}
-              onSubmit={(text) => mutation.mutate({ kind: 'generate', text })}
+              onSubmit={(text, lang) => mutation.mutate({ kind: 'generate', text, lang })}
               onCancel={latest ? () => setStartingOver(false) : undefined}
             />
           ) : (

@@ -17,6 +17,7 @@ from backend.interview.assist import find_coverage
 from backend.interview.questions import EXTRAS, FEATURES, FREE_RECALL, PROMPTS
 from backend.interview.transcript import has_content, in_question_order, transcript_hash
 from backend.models import Case, Interview, User, utcnow
+from backend.translate import check_language, needs_translation
 
 router = APIRouter(tags=["interview"])
 
@@ -30,6 +31,10 @@ class AnswerIn(BaseModel):
     answer: str = Field(default="", max_length=MAX_TEXT)
     status: Literal["remembered", "uncertain", "unknown"] | None = None
     source: Source | None = None
+    lang: str | None = None  # speech-recognition code of the language the witness used
+    english: str | None = Field(default=None, max_length=MAX_TEXT * 2)  # translation, for non-English words
+
+    _lang = field_validator("lang")(classmethod(lambda cls, v: check_language(v)))
 
     @field_validator("key")
     @classmethod
@@ -42,7 +47,11 @@ class AnswerIn(BaseModel):
 class DraftIn(BaseModel):
     free_recall: str = Field(default="", max_length=MAX_TEXT)
     free_recall_source: Source | None = None
+    free_recall_lang: str | None = None
+    free_recall_english: str | None = Field(default=None, max_length=MAX_TEXT * 2)
     answers: list[AnswerIn] = []
+
+    _lang = field_validator("free_recall_lang")(classmethod(lambda cls, v: check_language(v)))
 
     @field_validator("answers")
     @classmethod
@@ -63,6 +72,8 @@ class InterviewOut(BaseModel):
     status: str
     free_recall: str
     free_recall_source: str | None
+    free_recall_lang: str | None = None
+    free_recall_english: str | None = None
     answers: list
     created_by: int
     created_at: datetime
@@ -122,16 +133,28 @@ def save_draft(
         raise AppError("CONFLICT", "This interview has been confirmed and can no longer be changed.", 409)
     iv.free_recall = body.free_recall
     iv.free_recall_source = body.free_recall_source
-    iv.answers = in_question_order(
-        [
-            {"key": a.key, "prompt": PROMPTS[a.key], "answer": a.answer, "status": a.status, "source": a.source}
-            for a in body.answers
-        ]
-    )
+    # language fields only for words in another language, so English transcripts hash as before
+    other = needs_translation(body.free_recall_lang)
+    iv.free_recall_lang = body.free_recall_lang if other else None
+    iv.free_recall_english = body.free_recall_english if other else None
+    iv.answers = in_question_order([_answer(a) for a in body.answers])
     session.add(iv)
     session.commit()
     session.refresh(iv)
     return InterviewOut(**iv.model_dump())
+
+
+def _answer(a: AnswerIn) -> dict:
+    row = {"key": a.key, "prompt": PROMPTS[a.key], "answer": a.answer, "status": a.status, "source": a.source}
+    if needs_translation(a.lang):
+        row |= {"lang": a.lang, "english": a.english}
+    return row
+
+
+def untranslated(iv: dict) -> bool:
+    if iv.get("free_recall_lang") and iv["free_recall"].strip() and not (iv.get("free_recall_english") or "").strip():
+        return True
+    return any(a.get("lang") and a["answer"].strip() and not (a.get("english") or "").strip() for a in iv["answers"])
 
 
 class AssistOut(BaseModel):
@@ -177,6 +200,8 @@ def confirm(
         raise AppError("CONFLICT", "This interview has already been confirmed.", 409)
     if not has_content(iv.model_dump()):
         raise AppError("VALIDATION", "Record at least the free account or one answer before confirming.", 422)
+    if untranslated(iv.model_dump()):
+        raise AppError("TRANSLATION_MISSING", "Translate every answer given in another language before confirming.", 422)
     iv.transcript_hash = transcript_hash(iv.model_dump())
     iv.status = "confirmed"
     iv.confirmed_by = user.id

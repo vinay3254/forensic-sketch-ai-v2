@@ -9,8 +9,8 @@ import openai
 from fastapi import Request
 from pydantic import BaseModel, ValidationError
 
-from backend.ai.prompts import ATTRIBUTE_SYSTEM_PROMPT, COVERAGE_SYSTEM_PROMPT, EDIT_SYSTEM_PROMPT, FIGURE_SYSTEM_PROMPT, build_coverage_request
-from backend.ai.schemas import Attributes, Coverage, EditPlan, FigureEdit
+from backend.ai.prompts import ATTRIBUTE_SYSTEM_PROMPT, COVERAGE_SYSTEM_PROMPT, EDIT_SYSTEM_PROMPT, FIGURE_SYSTEM_PROMPT, TRANSLATE_SYSTEM_PROMPT, build_coverage_request
+from backend.ai.schemas import Attributes, Coverage, EditPlan, FigureEdit, Translation
 from backend.config import Settings
 from backend.errors import AppError
 
@@ -26,6 +26,7 @@ class AIClient(Protocol):
     def parse_edit(self, message: str, current: Attributes) -> EditPlan: ...
     def find_coverage(self, free_recall: str, features: dict[str, str]) -> Coverage: ...
     def figure_edit(self, request: str, current) -> FigureEdit: ...
+    def translate(self, text: str, language: str) -> str: ...
     def generate_image(self, prompt: str) -> bytes: ...
     def edit_image(self, image: bytes, prompt: str) -> bytes: ...
 
@@ -117,6 +118,9 @@ class LiveAIClient:
     def figure_edit(self, request: str, current) -> FigureEdit:
         user = f"Current settings:\n{current.model_dump_json()}\n\nOfficer's request:\n{request}"
         return self._structured(FIGURE_SYSTEM_PROMPT, user, FigureEdit)
+
+    def translate(self, text: str, language: str) -> str:
+        return self._structured(TRANSLATE_SYSTEM_PROMPT, f"Language: {language}\n\nWitness's words:\n{text}", Translation).english
 
     def _image_bytes(self, resp) -> bytes:
         try:

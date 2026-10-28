@@ -1,7 +1,7 @@
 import json
 import re
 
-from backend.ai.schemas import Attributes, Coverage, Edit, EditPlan, FigureEdit
+from backend.ai.schemas import Attributes, Coverage, Edit, EditPlan, FigureEdit, Translation
 from backend.cases.details import CaseDetails
 
 ATTRIBUTE_SYSTEM_PROMPT = (
@@ -33,6 +33,16 @@ COVERAGE_SYSTEM_PROMPT = (
     "Each quote must be copied character for character from the account: same words, spelling, case and "
     "punctuation. Never paraphrase, correct, summarise or combine separate parts. Use only the given keys. "
     "Leave a feature out if the account does not mention it. Never guess."
+)
+
+
+TRANSLATE_SYSTEM_PROMPT = (
+    "You translate a witness's spoken description of a person into English for a police record. "
+    "Reply with exactly one JSON object and nothing else. It must match this JSON schema:\n"
+    f"{json.dumps(Translation.model_json_schema())}\n"
+    "Translate faithfully and literally. Keep every detail and every sign of doubt (\"maybe\", \"I think\"), "
+    "keep the witness's order, and keep numbers, names and English words as spoken. Never add, remove, "
+    "summarise, correct or explain anything. Text that is already English stays as it is."
 )
 
 

@@ -1,7 +1,19 @@
 import { useState } from 'react'
-import type { InputSource, Interview, Question, RecallStatus } from '../types'
+import { isEnglish, langName, type InputSource, type Interview, type Question, type RecallStatus } from '../types'
 
-type Entry = { answer: string; status: RecallStatus | null; source: InputSource | null }
+type Entry = { answer: string; status: RecallStatus | null; source: InputSource | null; lang?: string | null; english?: string | null }
+
+// words in another language are shown with the English the sketch will use
+function Translation({ text, lang, english }: { text: string; lang?: string | null; english?: string | null }) {
+  if (!text.trim() || isEnglish(lang)) return null
+  return english ? (
+    <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">
+      English, from {langName(lang!)}: “{english}”
+    </p>
+  ) : (
+    <p className="mt-1 text-sm text-red-700">Not translated from {langName(lang!)} yet. Open this answer and translate it.</p>
+  )
+}
 
 const STATUS_BADGE: Record<RecallStatus, string> = {
   remembered: 'bg-green-100 text-green-800',
@@ -15,6 +27,8 @@ interface Props {
   freePrompt: string
   freeRecall: string
   freeSource: InputSource | null
+  freeLang: string | null
+  freeEnglish: string | null
   questions: Question[]
   entries: Record<string, Entry>
   interview: Interview
@@ -30,6 +44,8 @@ export default function InterviewReview({
   freePrompt,
   freeRecall,
   freeSource,
+  freeLang,
+  freeEnglish,
   questions,
   entries,
   interview,
@@ -82,6 +98,7 @@ export default function InterviewReview({
           </div>
           <p className="mt-1 text-sm text-slate-500">Q: {freePrompt}</p>
           <p className="mt-2 whitespace-pre-wrap">{freeRecall.trim() ? `“${freeRecall}”` : <span className="text-slate-400">Nothing recorded</span>}</p>
+          <Translation text={freeRecall} lang={freeLang} english={freeEnglish} />
         </div>
 
         {asked.map(({ q, step, e }) => (
@@ -99,6 +116,7 @@ export default function InterviewReview({
             </div>
             <p className="mt-1 text-sm text-slate-500">Q: {q.prompt}</p>
             <p className="mt-2 whitespace-pre-wrap">{e!.answer.trim() ? `“${e!.answer}”` : <span className="text-slate-400">No words recorded</span>}</p>
+            <Translation text={e!.answer} lang={e!.lang} english={e!.english} />
           </div>
         ))}
 

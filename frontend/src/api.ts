@@ -67,8 +67,10 @@ export const listCases = () => request<Case[]>('/api/cases')
 export const createCase = (title: string) => post<Case>('/api/cases', { title })
 export const getCase = (id: number) => request<CaseDetail>(`/api/cases/${id}`)
 
-export const generate = (caseId: number, description: string) =>
-  post<Version>(`/api/cases/${caseId}/generate`, { description })
+export const generate = (caseId: number, description: string, lang?: string) =>
+  post<Version>(`/api/cases/${caseId}/generate`, { description, lang })
+export const translateText = (caseId: number, text: string, lang: string) =>
+  post<{ english: string }>(`/api/cases/${caseId}/translate`, { text, lang })
 export const refine = (caseId: number, message: string) =>
   post<RefineResult>(`/api/cases/${caseId}/refine`, { message })
 export const revert = (caseId: number, versionId: number) =>

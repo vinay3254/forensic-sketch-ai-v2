@@ -75,6 +75,9 @@ class MockAIClient:
             ]
         )
 
+    def translate(self, text: str, language: str) -> str:
+        return f"[{language}, offline: no translation] {text}"
+
     def figure_edit(self, request: str, current) -> FigureEdit:
         from backend.figure.params import clothing_from
 

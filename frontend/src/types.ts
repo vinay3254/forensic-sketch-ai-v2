@@ -257,6 +257,7 @@ export const AUDIT_ACTIONS = [
   'angle_view_create',
   'interview_start',
   'interview_assist',
+  'translate',
   'interview_confirm',
   'audit_view',
   'access_denied',
@@ -284,6 +285,8 @@ export interface Answer {
   answer: string
   status: RecallStatus | null
   source: InputSource | null
+  lang?: string | null // only for words spoken in a language other than English
+  english?: string | null // their English translation, which the sketch is made from
 }
 
 export interface Interview {
@@ -292,6 +295,8 @@ export interface Interview {
   status: 'draft' | 'confirmed'
   free_recall: string
   free_recall_source: InputSource | null
+  free_recall_lang?: string | null
+  free_recall_english?: string | null
   answers: Answer[]
   created_by: number
   created_at: string
@@ -303,6 +308,8 @@ export interface Interview {
 export interface InterviewDraft {
   free_recall: string
   free_recall_source: InputSource | null
+  free_recall_lang?: string | null
+  free_recall_english?: string | null
   answers: Omit<Answer, 'prompt'>[]
 }
 
@@ -317,3 +324,19 @@ export const PROPORTION_SLIDERS = [
   ['jaw_width', 'Jaw width', 'Narrower', 'Wider'],
 ] as const
 export type Proportions = Partial<Record<(typeof PROPORTION_SLIDERS)[number][0], number>>
+
+// dictation languages (Chrome's Web Speech API codes); backend/translate.py has the same list
+export const SPEECH_LANGS = [
+  { code: 'en-IN', label: 'English (India)' },
+  { code: 'en-US', label: 'English (US)' },
+  { code: 'hi-IN', label: 'हिन्दी · Hindi' },
+  { code: 'kn-IN', label: 'ಕನ್ನಡ · Kannada' },
+  { code: 'te-IN', label: 'తెలుగు · Telugu' },
+  { code: 'ta-IN', label: 'தமிழ் · Tamil' },
+  { code: 'ml-IN', label: 'മലയാളം · Malayalam' },
+  { code: 'mr-IN', label: 'मराठी · Marathi' },
+  { code: 'bn-IN', label: 'বাংলা · Bengali' },
+  { code: 'gu-IN', label: 'ગુજરાતી · Gujarati' },
+] as const
+export const isEnglish = (code: string | null | undefined) => !code || code.startsWith('en-')
+export const langName = (code: string) => SPEECH_LANGS.find((l) => l.code === code)?.label.split(' · ').at(-1) ?? code

@@ -19,6 +19,8 @@ def canonical_transcript(iv: dict) -> str:
             "free_recall": iv["free_recall"],
             "free_recall_source": iv["free_recall_source"],
             "answers": iv["answers"],
+            # only present for another language, so English transcripts hash exactly as before
+            **{k: iv[k] for k in ("free_recall_lang", "free_recall_english") if iv.get(k)},
         },
         sort_keys=True,
         ensure_ascii=False,
@@ -69,14 +71,23 @@ def render_description(iv: dict) -> str:
         "A feature marked 'not remembered' must be null. Never invent details.",
     ]
     if iv["free_recall"].strip():
-        lines.append(f'Free account: "{iv["free_recall"]}"')
+        lines.append(f'Free account: {_words(iv["free_recall"], iv.get("free_recall_lang"), iv.get("free_recall_english"))}')
     for a in iv["answers"]:
         label = LABELS[a["key"]]
         if a["status"] == "unknown":
             lines.append(f"{label}: not remembered")
         elif a["answer"].strip():
-            lines.append(f'{label} ({a["status"] or "not rated"}): "{a["answer"]}"')
+            lines.append(f'{label} ({a["status"] or "not rated"}): {_words(a["answer"], a.get("lang"), a.get("english"))}')
     return "\n".join(lines)
+
+
+def _words(text: str, lang: str | None, english: str | None) -> str:
+    """Quoted words for the extractor: the English translation when the witness spoke another language."""
+    if lang and english:
+        from backend.translate import LANGUAGES
+
+        return f'"{english}" (translated from {LANGUAGES[lang]})'
+    return f'"{text}"'
 
 
 def fields_with_status(iv: dict, status: str) -> list[str]:
