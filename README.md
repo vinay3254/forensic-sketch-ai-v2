@@ -2,17 +2,19 @@
 
 HackFest 2026 · Track 1 (AI Nexus) · Problem T1-P.
 
-An officer types a witness's description, gets a realistic face, refines it by chat ("make the jaw wider"), and exports a high-resolution photo and pencil sketch. Every access to a case is written to a tamper-evident audit log.
+An officer interviews a witness (or types a description), gets a black-and-white forensic pencil sketch, refines it by chat ("make the jaw wider"), can turn any version into a realistic photo, and exports both at high resolution. Every access to a case is written to a tamper-evident audit log.
 
 - Design: [`docs/superpowers/specs/2026-10-28-forensic-sketch-ai-design.md`](docs/superpowers/specs/2026-10-28-forensic-sketch-ai-design.md)
 - Plan: [`docs/superpowers/plans/2026-10-28-forensic-sketch-ai.md`](docs/superpowers/plans/2026-10-28-forensic-sketch-ai.md)
+- Smart Witness Interview design: [`docs/superpowers/specs/2026-10-28-smart-witness-interview-design.md`](docs/superpowers/specs/2026-10-28-smart-witness-interview-design.md)
+- Current status and next steps: [`HANDOFF.md`](HANDOFF.md)
 
 ## Backend setup
 
 Requires [uv](https://docs.astral.sh/uv/). It installs Python 3.12 for you.
 
 ```bash
-cp .env.example .env          # set JWT_SECRET; keep AI_MOCK=1 until the LLM service is ready
+cp .env.example .env          # set JWT_SECRET (32+ chars); keep AI_MOCK=1 until the LLM service is ready
 uv sync
 uv run python -m backend.seed # demo users + demo case
 uv run uvicorn backend.app:create_app --factory --reload --port 8000
@@ -31,7 +33,12 @@ LLM_BASE_URL=http://localhost:<port>/v1
 LLM_API_KEY=<key>
 LLM_CHAT_MODEL=<chat model id>
 LLM_IMAGE_MODEL=<image model id>
+# Image models that cannot take an input image (e.g. Codex): edit via the Responses API instead
+LLM_IMAGE_EDIT_API=responses   # default: images
+LLM_IMAGE_EDIT_MODEL=<text model that calls the image_generation tool>
 ```
+
+Setup used for the demo: chat `auto/best-fast`, image `codex/gpt-5.6-luna-image`, edits `codex/gpt-5.6-luna` with `LLM_IMAGE_EDIT_API=responses`.
 
 Then run the smoke test, which calls each AI operation once and prints timings:
 
@@ -73,10 +80,10 @@ The Vite dev server proxies `/api` and `/health` to `http://localhost:8000`, so 
 ## Demo script (3 minutes)
 
 1. Log in as `officer1`. Create case "Chain snatching, Yelahanka".
-2. Paste the witness description. The first face appears.
+2. Paste the witness description. The first pencil sketch appears.
 3. Refine twice: "jaw wider", "add a thin moustache". Only those features change.
-4. Revert to version 2 to show history, then return to the latest.
-5. Export photo and sketch.
+4. Revert to version 1 to show history.
+5. Click "Make realistic photo", flip the Sketch / Realistic photo toggle, then export sketch and photo.
 6. Log in as `admin`. Open the audit log filtered to this case. Show each step with user and time. Click "Verify integrity".
 7. Log in as `officer2`. Try to open the case. Show the 403 and the `access_denied` audit row.
 
@@ -92,5 +99,9 @@ The Vite dev server proxies `/api` and `/health` to `http://localhost:8000`, so 
 | GET | `/api/cases/{id}/versions` | owner or admin |
 | POST | `/api/cases/{id}/versions/{vid}/revert` | owner or admin |
 | GET | `/api/cases/{id}/versions/{vid}/image` | owner or admin |
+| POST, GET | `/api/cases/{id}/versions/{vid}/photo` (make / view realistic photo) | owner or admin |
 | GET | `/api/cases/{id}/versions/{vid}/export?style=photo\|sketch` | owner or admin |
+| GET | `/api/interview/questions` | signed in |
+| GET, POST | `/api/cases/{id}/interviews` | owner or admin |
+| GET, PUT | `/api/cases/{id}/interviews/{iid}` (PUT = autosave draft) | owner or admin |
 | GET | `/api/audit`, `/api/audit/verify` | admin |

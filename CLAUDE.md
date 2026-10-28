@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-SketchLab: an officer turns a witness description into a black-and-white forensic pencil sketch, refines it by chat, can convert a version into a realistic photo, and exports both. Every case access is written to a hash-chained audit log. Design: `docs/superpowers/specs/2026-10-28-forensic-sketch-ai-design.md`. In-progress feature: Smart Witness Interview, `docs/superpowers/specs/2026-10-28-smart-witness-interview-design.md` (its "Delivery" list is the build order).
+SketchLab: an officer turns a witness description into a black-and-white forensic pencil sketch, refines it by chat, can convert a version into a realistic photo, and exports both. Every case access is written to a hash-chained audit log. Design: `docs/superpowers/specs/2026-10-28-forensic-sketch-ai-design.md`. In-progress feature: Smart Witness Interview, `docs/superpowers/specs/2026-10-28-smart-witness-interview-design.md` (its "Delivery" list is the build order). **Read `HANDOFF.md` first**: it has which interview features are done, which is next, live-AI environment notes and known issues. Update it whenever a feature lands.
 
 ## Commands
 
