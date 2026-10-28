@@ -65,3 +65,26 @@ input:focus {
   outline: none;
   border-color: var(--color-ink) !important;
 }
+
+/* TRACE splash */
+@keyframes trace-bracket {
+  from { opacity: 0; transform: scale(1.35); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes trace-tile {
+  from { opacity: 0; transform: translateY(14px) scale(0.94); filter: brightness(1.6); }
+  to { opacity: 1; transform: none; filter: none; }
+}
+@keyframes trace-blue {
+  0% { box-shadow: 0 0 0 0 rgba(60, 110, 190, 0); }
+  60% { box-shadow: 0 0 40px 6px rgba(60, 110, 190, 0.45); }
+  100% { box-shadow: 0 0 18px 0 rgba(60, 110, 190, 0.25); }
+}
+@keyframes trace-letter {
+  from { opacity: 0; transform: translateY(10px); letter-spacing: 0.2em; }
+  to { opacity: 1; transform: none; letter-spacing: 0; }
+}
+.trace-bracket { opacity: 0; animation: trace-bracket 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.trace-tile { opacity: 0; animation: trace-tile 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+.trace-blue { animation: trace-tile 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) forwards, trace-blue 1.4s ease-out 0.4s forwards; animation-delay: inherit; }
+.trace-letter { opacity: 0; animation: trace-letter 0.5s ease-out forwards; }

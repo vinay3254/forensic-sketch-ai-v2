@@ -6,6 +6,7 @@ import { listCases, logout, me } from './api'
 import CaseBar from './components/CaseBar'
 import { CASE_PAGES } from './components/caseTabs'
 import CommandPalette, { openPalette } from './components/CommandPalette'
+import Splash from './components/Splash'
 import { recentCases, RECENT_EVENT, rememberVisit } from './lib/recent'
 import AuditPage from './pages/AuditPage'
 import CasesPage from './pages/CasesPage'
@@ -162,6 +163,8 @@ function Guard({ admin, children }: { admin?: boolean; children: ReactNode }) {
 
 export default function App() {
   return (
+    <>
+    <Splash />
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route
@@ -230,5 +233,6 @@ export default function App() {
       />
       <Route path="*" element={<Navigate to="/cases" replace />} />
     </Routes>
+    </>
   )
 }
