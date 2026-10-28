@@ -1,13 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ChevronRight, ShieldX } from 'lucide-react'
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { ApiError, generate, getCase, makePhoto, refine, revert } from '../api'
 import AttributePanel from '../components/AttributePanel'
 import DescriptionForm from '../components/DescriptionForm'
 import FaceCanvas, { type View } from '../components/FaceCanvas'
 import RefineChat from '../components/RefineChat'
-import { Badge, buttonClass, Card, EmptyState, ErrorBanner, relativeTime, Spinner } from '../components/ui'
 import VersionStrip from '../components/VersionStrip'
 
 type Action =
@@ -17,13 +15,6 @@ type Action =
   | { kind: 'photo'; versionId: number }
 
 const RETRYABLE = new Set(['AI_REFUSED', 'AI_UNAVAILABLE'])
-
-const BUSY_LABEL: Record<Action['kind'], string> = {
-  generate: 'Drawing the sketch…',
-  refine: 'Applying the change…',
-  revert: 'Restoring the version…',
-  photo: 'Rendering a realistic photo…',
-}
 
 export default function WorkspacePage() {
   const caseId = Number(useParams().id)
@@ -50,23 +41,10 @@ export default function WorkspacePage() {
     },
   })
 
-  if (isPending) return <Spinner label="Opening case…" />
+  if (isPending) return <p className="text-slate-500">Loading…</p>
   if (error) {
-    const forbidden = error instanceof ApiError && error.code === 'FORBIDDEN'
-    return (
-      <Card className="mx-auto max-w-lg">
-        <EmptyState
-          icon={<ShieldX className="size-5" />}
-          title={forbidden ? 'Access denied' : 'Could not open this case'}
-          body={forbidden ? 'You do not have access to this case. This attempt has been recorded in the audit log.' : error.message}
-          action={
-            <Link to="/cases" className={buttonClass('secondary')}>
-              Back to cases
-            </Link>
-          }
-        />
-      </Card>
-    )
+    const msg = error instanceof ApiError && error.code === 'FORBIDDEN' ? 'You do not have access to this case.' : error.message
+    return <p className="rounded bg-red-50 p-4 text-red-700">{msg}</p>
   }
 
   const { case: c, versions, chat } = data
@@ -77,38 +55,27 @@ export default function WorkspacePage() {
   const err = mutation.error instanceof ApiError ? mutation.error : null
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-7xl space-y-4">
       <div>
-        <nav className="mb-2 flex items-center gap-1 text-xs text-ink-500">
-          <Link to="/cases" className="hover:text-ink-900">
-            Cases
-          </Link>
-          <ChevronRight className="size-3" />
-          <span className="font-mono text-ink-700">{c.case_number}</span>
-        </nav>
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight text-ink-950">{c.title}</h1>
-          <Badge tone="green">
-            <span className="size-1.5 rounded-full bg-current" />
-            {c.status}
-          </Badge>
-          <span className="text-sm text-ink-400">
-            Opened {relativeTime(c.created_at)} · {versions.length} version{versions.length === 1 ? '' : 's'}
-          </span>
-        </div>
+        <p className="font-mono text-sm text-slate-500">{c.case_number}</p>
+        <h1 className="text-2xl font-semibold">{c.title}</h1>
       </div>
-
       {mutation.error && (
-        <ErrorBanner
-          message={mutation.error.message}
-          busy={busy}
-          onRetry={err && RETRYABLE.has(err.code) ? () => mutation.mutate(mutation.variables!) : undefined}
-          onDismiss={() => mutation.reset()}
-        />
+        <div className="flex items-center gap-3 rounded bg-red-50 p-3 text-sm text-red-700">
+          <span>{mutation.error.message}</span>
+          {err && RETRYABLE.has(err.code) && (
+            <button
+              onClick={() => mutation.mutate(mutation.variables!)}
+              disabled={busy}
+              className="ml-auto rounded bg-red-600 px-3 py-1 text-white disabled:opacity-50"
+            >
+              Try again
+            </button>
+          )}
+        </div>
       )}
-
-      <div className="grid gap-6 xl:grid-cols-[24rem_1fr_20rem] lg:grid-cols-[22rem_1fr]">
-        <Card className="flex h-[40rem] flex-col overflow-hidden">
+      <div className="grid gap-6 lg:grid-cols-[22rem_1fr_18rem]">
+        <section className="h-[36rem] rounded-lg bg-white p-4 shadow">
           {showForm ? (
             <DescriptionForm
               busy={busy}
@@ -124,30 +91,21 @@ export default function WorkspacePage() {
               onStartOver={() => setStartingOver(true)}
             />
           )}
-        </Card>
-
-        <section className="flex justify-center">
-          <FaceCanvas
-            version={selected}
-            view={view}
-            busy={busy}
-            busyLabel={mutation.variables ? BUSY_LABEL[mutation.variables.kind] : 'Working…'}
-            onView={setView}
-          />
         </section>
-
-        <Card className="overflow-hidden lg:col-span-2 xl:col-span-1">
+        <section className="flex flex-col items-center gap-4">
+          <FaceCanvas version={selected} view={view} busy={busy} onView={setView} />
+        </section>
+        <section className="rounded-lg bg-white p-4 shadow">
           <AttributePanel
             caseId={caseId}
             version={selected}
             busy={busy}
             onMakePhoto={() => selected && mutation.mutate({ kind: 'photo', versionId: selected.id })}
           />
-        </Card>
+        </section>
       </div>
-
       {versions.length > 0 && (
-        <Card>
+        <section className="rounded-lg bg-white p-4 shadow">
           <VersionStrip
             versions={versions}
             selectedId={selected?.id}
@@ -158,7 +116,7 @@ export default function WorkspacePage() {
             }}
             onRevert={(versionId) => mutation.mutate({ kind: 'revert', versionId })}
           />
-        </Card>
+        </section>
       )}
     </div>
   )
