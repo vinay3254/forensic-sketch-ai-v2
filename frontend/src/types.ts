@@ -110,6 +110,12 @@ export interface BodyFigure {
   created_at: string
 }
 
+export interface BodyType {
+  key: string
+  label: string
+  image_url: string
+}
+
 export interface CaseDetail {
   case: Case
   versions: Version[]

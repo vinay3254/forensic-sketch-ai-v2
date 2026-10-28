@@ -3,6 +3,7 @@ import type {
   AuditPage,
   AuditVerify,
   BodyFigure,
+  BodyType,
   Case,
   CaseDetail,
   CaseDetails,
@@ -78,6 +79,8 @@ export const getBody = (caseId: number) =>
     throw e
   })
 export const drawBody = (caseId: number) => post<BodyFigure>(`/api/cases/${caseId}/body`)
+
+export const listBodyTypes = () => request<BodyType[]>('/api/body-types')
 
 export const listVariants = (caseId: number) => request<Variant[]>(`/api/cases/${caseId}/variants`)
 export const makeVariant = (caseId: number, versionId: number, kind: VariantKind) =>
