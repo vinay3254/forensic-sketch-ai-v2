@@ -6,10 +6,12 @@ import AttributePanel from '../components/AttributePanel'
 import DescriptionForm from '../components/DescriptionForm'
 import DetailsPanel from '../components/DetailsPanel'
 import FaceCanvas, { type View } from '../components/FaceCanvas'
+import HeadPanel from '../components/HeadPanel'
 import InterviewLauncher from '../components/InterviewLauncher'
 import RefineChat from '../components/RefineChat'
 import VariantsPanel from '../components/VariantsPanel'
 import VersionStrip from '../components/VersionStrip'
+import type { Version } from '../types'
 
 type Action =
   | { kind: 'generate'; text: string }
@@ -125,11 +127,21 @@ export default function WorkspacePage() {
       <section className="rounded-lg bg-white p-4 shadow">
         <DetailsPanel caseId={caseId} details={c.details} />
       </section>
+      {selected && <HeadSection caseId={caseId} version={selected} />}
       {selected && (
         <section className="rounded-lg bg-white p-4 shadow">
           <VariantsPanel caseId={caseId} version={selected} />
         </section>
       )}
     </div>
+  )
+}
+
+// the panel hides itself when the 3D service is off, so the card around it must too
+function HeadSection(props: { caseId: number; version: Version }) {
+  return (
+    <section className="rounded-lg bg-white p-4 shadow empty:hidden">
+      <HeadPanel {...props} />
+    </section>
   )
 }

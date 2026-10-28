@@ -7,6 +7,8 @@ import type {
   Case,
   CaseDetail,
   CaseDetails,
+  Head3D,
+  Health,
   Interview,
   InterviewDraft,
   QuestionBank,
@@ -81,6 +83,10 @@ export const getBody = (caseId: number) =>
 export const drawBody = (caseId: number) => post<BodyFigure>(`/api/cases/${caseId}/body`)
 
 export const listBodyTypes = () => request<BodyType[]>('/api/body-types')
+
+export const health = () => request<Health>('/health')
+export const listHeads = (caseId: number) => request<Head3D[]>(`/api/cases/${caseId}/heads`)
+export const makeHead = (caseId: number, versionId: number) => post<Head3D>(`/api/cases/${caseId}/versions/${versionId}/head`)
 
 export const listVariants = (caseId: number) => request<Variant[]>(`/api/cases/${caseId}/variants`)
 export const makeVariant = (caseId: number, versionId: number, kind: VariantKind) =>

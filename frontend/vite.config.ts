@@ -2,7 +2,8 @@ import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
 
-const backend = 'http://localhost:8000'
+// BACKEND_URL lets a second dev stack run beside the usual one
+const backend = process.env.BACKEND_URL ?? 'http://localhost:8000'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],

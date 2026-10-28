@@ -116,6 +116,20 @@ export interface BodyType {
   image_url: string
 }
 
+export interface Head3D {
+  id: number
+  version_id: number
+  version_no: number
+  mesh_url: string
+  created_at: string
+}
+
+export interface Health {
+  status: string
+  ai_mode: string
+  head3d: 'on' | 'off'
+}
+
 export interface CaseDetail {
   case: Case
   versions: Version[]

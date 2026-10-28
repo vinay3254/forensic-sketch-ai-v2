@@ -61,6 +61,21 @@ Built from a real composite sheet the user showed (spec `docs/superpowers/specs/
 
 Incident fields never reach an image prompt (tested).
 
+## 3D head (paused, off by default)
+
+Spec `docs/superpowers/specs/2026-10-28-3d-head-design.md`, plan `docs/superpowers/plans/2026-10-28-3d-head.md`. Tasks 1–2 of 4 built; the user paused it: too slow for a live demo.
+
+- Worker `head3d/` (TripoSR on the GPU): `uv run --project head3d python head3d/fetch_triposr.py` once, then `cd head3d && uv run uvicorn server:app --port 8010`, and set `HEAD3D_URL=http://127.0.0.1:8010`. Empty `HEAD3D_URL` hides the panel and the routes return 503.
+- Backend: `POST /api/cases/{id}/versions/{vid}/head` (makes the realistic photo first), `GET /heads`, `GET /heads/{hid}/mesh`.
+- Viewer: `HeadPanel` / `HeadViewer` (three.js, lazy-loaded), presets left/right profile, ¾, front.
+
+Open problems before it can be used:
+- **Possible mirrored mesh**: the "Left profile" preset showed the person's right side. The `torchmcubes` stand-in in `head3d/server.py` reverses the axis order; check with an asymmetric mark before trusting any side view.
+- Dark cracks on the face, probably flipped triangle winding from the same stand-in (or render with `side: THREE.DoubleSide`).
+- Slow: about 30 s for the photo plus 25–60 s for the head.
+- Tasks 3 (save angles as pencil sketches) and 4 (case sheet) not started.
+- `head3d/uv.lock` pins old `transformers==4.35.0` (TripoSR's requirement); GitHub Dependabot flags vulnerabilities in the repo.
+
 ## Localized edits
 
 Done. Refines keep the change inside the edited regions and paste the previous sketch back elsewhere (`face/regions.py`, spec `docs/superpowers/specs/2026-10-28-localized-edits-design.md`). Needs `storage/models/face_parser.onnx` from `scripts/fetch_face_parser.py`; without it refines behave as before. Live check: a nose edit changed only the nose. Jaw, face shape, facial hair and marks have no parser class and still redraw the whole sketch. This fixes the known issue "edits change more than asked" for the mapped regions.
