@@ -86,6 +86,9 @@ export const listVariants = (caseId: number) => request<Variant[]>(`/api/cases/$
 export const makeVariant = (caseId: number, versionId: number, kind: VariantKind) =>
   post<Variant>(`/api/cases/${caseId}/versions/${versionId}/variants`, { kind })
 
+export const sheetUrl = (caseId: number, versionId: number, format: 'png' | 'pdf') =>
+  `/api/cases/${caseId}/sheet?version_id=${versionId}&format=${format}`
+
 export const exportUrl = (caseId: number, versionId: number, style: 'photo' | 'sketch') =>
   `/api/cases/${caseId}/versions/${versionId}/export?style=${style}`
 

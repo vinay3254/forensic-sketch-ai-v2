@@ -10,7 +10,7 @@ Status of SketchLab as of 2026-10-28. Branch `main` (the only branch), remote `o
 - Realistic photo from any sketch version (made once per version, then reused).
 - Export sketch and photo as PNG (2048 px, footer with case, version, time, user).
 - Audit log with SHA-256 hash chain, admin filters, "Verify integrity".
-- Tests: `uv run pytest -q` → 147 passed. `npm run build` passes.
+- Tests: `uv run pytest -q` → 265 passed. `npm run build` passes.
 - Live AI check (Codex models) passed: generate, refine, realistic photo, both exports.
 
 ## Smart Witness Interview (in progress)
@@ -48,6 +48,18 @@ Sketches can be generated from a confirmed interview ("Confirm & generate sketch
 - The `revoked_token` table is never pruned.
 - No frontend unit tests; the frontend is checked with `npm run build` and in the browser.
 - A deleted tail of audit rows still verifies as intact; `/api/audit/verify` returns `head_hash` so an auditor can compare it with a noted value.
+
+## Case sheet features
+
+Built from a real composite sheet the user showed (spec `docs/superpowers/specs/2026-10-28-case-sheet-design.md`, plan `docs/superpowers/plans/2026-10-28-case-sheet.md`):
+
+- **Disguise variants** (`backend/variants/`): ten fixed kinds from the selected version, one image edit each (~35–60 s), localized when the face stays put (glasses and beard did; the cap edit moved the face and kept the full redraw).
+- **Person & case details** (`Case.details`, `backend/cases/details.py`): height, build, clothing, movement, voice, other traits; approach, weapon, offence, requesting unit, reference. Five optional interview questions fill empty person fields verbatim after "Confirm & generate".
+- **Full-body figure** (`backend/body/routes.py`): drawn from build, clothing and the sketch's age, gender and hair; height is printed beside it, not drawn to scale.
+- **Body-type chart** (`backend/body/types.py`, PNGs in `backend/assets/body_types/`, redraw with `scripts/make_body_types.py`): clicking a figure fills `build`.
+- **Case sheet** (`backend/sheet/`): A4 landscape 300 dpi PNG or PDF with header, sketch, face/person/incident sections, figure with height bar, build chart, numbered variants and footer.
+
+Incident fields never reach an image prompt (tested).
 
 ## Localized edits
 

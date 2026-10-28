@@ -114,4 +114,10 @@ The Vite dev server proxies `/api` and `/health` to `http://localhost:8000`, so 
 | GET | `/api/interview/questions` | signed in |
 | GET, POST | `/api/cases/{id}/interviews` | owner or admin |
 | GET, PUT | `/api/cases/{id}/interviews/{iid}` (PUT = autosave draft) | owner or admin |
+| POST | `/api/cases/{id}/interviews/{iid}/assist`, `/confirm`, `/generate` | owner or admin |
+| PUT | `/api/cases/{id}/details` (person and incident details) | owner or admin |
+| POST, GET | `/api/cases/{id}/versions/{vid}/variants` `{kind}` · `/api/cases/{id}/variants` (disguise variants) | owner or admin |
+| POST, GET | `/api/cases/{id}/body` (full-body figure) | owner or admin |
+| GET | `/api/body-types` (build reference chart) | signed in |
+| GET | `/api/cases/{id}/sheet?version_id=&format=png\|pdf` (one-page case sheet) | owner or admin |
 | GET | `/api/audit`, `/api/audit/verify` | admin |

@@ -1,4 +1,4 @@
-import { exportUrl } from '../api'
+import { exportUrl, sheetUrl } from '../api'
 import { ATTRIBUTE_KEYS, type Version } from '../types'
 
 const label = (key: string) => key.replace('_', ' ').replace(/^\w/, (c) => c.toUpperCase())
@@ -51,6 +51,15 @@ export default function AttributePanel({ caseId, version, busy, onMakePhoto }: P
               Make realistic photo
             </button>
           )}
+          <div className="flex w-full items-center gap-2 border-t pt-2 text-sm">
+            <span className="text-slate-600">Case sheet:</span>
+            <a href={sheetUrl(caseId, version.id, 'pdf')} download className="text-blue-700 hover:underline">
+              PDF
+            </a>
+            <a href={sheetUrl(caseId, version.id, 'png')} download className="text-blue-700 hover:underline">
+              PNG
+            </a>
+          </div>
         </div>
       )}
     </div>
