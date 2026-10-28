@@ -4,6 +4,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 
+from backend.ai.client import LiveAIClient
+from backend.ai.mock import MockAIClient
 from backend.audit.routes import router as audit_router
 from backend.auth.ratelimit import LoginLimiter
 from backend.auth.routes import router as auth_router
@@ -26,6 +28,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.engine = make_engine(settings.database_url)
     app.state.login_limiter = LoginLimiter()
+    app.state.ai_client = MockAIClient() if settings.ai_mock else LiveAIClient(settings)
 
     app.add_middleware(
         CORSMiddleware,
