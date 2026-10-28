@@ -45,9 +45,15 @@ def draw_body(
     settings = request.app.state.settings
     version = latest_version(session, case.id)
     attrs = Attributes(**version.attributes) if version else Attributes()
-    prompt = build_body_prompt(attrs, CaseDetails(**(case.details or {})))
+    details = CaseDetails(**(case.details or {}))
     try:
-        image = normalize_image(ai.generate_image(prompt), settings.llm_image_size)
+        if version:  # draw from the sketch itself so the figure has the same face
+            prompt = build_body_prompt(attrs, details, from_sketch=True)
+            raw = ai.edit_image(existing_image_file(settings, version.image_path).read_bytes(), prompt)
+        else:
+            prompt = build_body_prompt(attrs, details)
+            raw = ai.generate_image(prompt)
+        image = normalize_image(raw, settings.llm_image_size)
     except AppError as e:
         record(session, request, "body_create", user, case_id=case.id, detail={"outcome": e.code})
         raise

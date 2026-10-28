@@ -101,10 +101,18 @@ def build_variant_prompt(kind: str) -> str:
     )
 
 
-def build_body_prompt(a: Attributes, d: CaseDetails) -> str:
-    """Only the person's look goes in; incident details (weapon, offence...) never do."""
+def build_body_prompt(a: Attributes, d: CaseDetails, from_sketch: bool = False) -> str:
+    """Only the person's look goes in; incident details (weapon, offence...) never do.
+    With `from_sketch` the face sketch is the input image, so the figure keeps that face."""
     who = " ".join(x for x in [a.age_range, a.gender] if x) or "adult person"
-    parts = [f"Quick hand-drawn pencil sketch of a full-length standing figure of a {who}"]
+    if from_sketch:
+        parts = [
+            "Extend this head-and-shoulders pencil sketch into a full-length standing figure of the same person. "
+            "Keep the same face, identity, hairstyle, earrings, marks and other details exactly as drawn, "
+            "and the same rough hand-drawn pencil style"
+        ]
+    else:
+        parts = [f"Quick hand-drawn pencil sketch of a full-length standing figure of a {who}"]
     head = ", ".join(x for x in [a.hair, a.facial_hair] if x)
     if head:
         parts.append(f"Head as in the face sketch: {head}")

@@ -33,6 +33,14 @@ def test_prompt_matches_the_head_of_the_sketch():
     assert "bald on top" in p and "light stubble" in p
 
 
+def test_prompt_from_sketch_keeps_the_person_and_drops_incident_details():
+    d = CaseDetails(build="slim", clothing="blue kurta", **INCIDENT)
+    p = build_body_prompt(Attributes(gender="female"), d, from_sketch=True).lower()
+    assert "same person" in p and "full-length" in p and "slim" in p and "blue kurta" in p
+    for w in ("revolver", "robbery", "on foot", "unit 7", "suspect", "criminal", "mugshot", "police"):
+        assert w not in p
+
+
 def test_prompt_without_details_is_a_plain_figure():
     p = build_body_prompt(Attributes(), CaseDetails())
     assert "adult person" in p and "None" not in p
@@ -83,3 +91,31 @@ def test_ai_failure_is_503_and_audited(app, client, case_id, login):
     login(client, "admin", "adminpass")
     row = client.get(f"/api/audit?action=body_create&case_id={case_id}").json()["items"][0]
     assert row["detail"] == {"outcome": "AI_UNAVAILABLE"}
+
+
+def test_figure_is_drawn_from_the_latest_sketch(app, client, case_id):
+    client.post(f"/api/cases/{case_id}/generate", json={"description": "male, 30s"})
+    v2 = client.post(f"/api/cases/{case_id}/refine", json={"message": "bigger nose"}).json()["version"]
+    sketch = client.get(v2["image_url"]).content
+    seen = {}
+    real_edit = app.state.ai_client.edit_image
+
+    def edit(image, prompt):
+        seen.update(image=image, prompt=prompt)
+        return real_edit(image, prompt)
+
+    def no_generate(prompt):
+        raise AssertionError("with a sketch, the figure must be drawn from it")
+
+    app.state.ai_client.edit_image = edit
+    app.state.ai_client.generate_image = no_generate
+    assert draw(client, case_id).status_code == 200
+    assert seen["image"] == sketch and "same person" in seen["prompt"].lower()
+
+
+def test_figure_without_a_sketch_is_drawn_from_text(app, client, case_id):
+    def no_edit(image, prompt):
+        raise AssertionError("no sketch to edit yet")
+
+    app.state.ai_client.edit_image = no_edit
+    assert draw(client, case_id).status_code == 200
