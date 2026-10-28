@@ -7,6 +7,7 @@ from sqlalchemy import text
 from backend.audit.routes import router as audit_router
 from backend.auth.ratelimit import LoginLimiter
 from backend.auth.routes import router as auth_router
+from backend.cases.routes import router as cases_router
 from backend.config import Settings, get_settings
 from backend.db import init_db, make_engine
 from backend.errors import register_error_handlers
@@ -36,6 +37,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     register_error_handlers(app)
     app.include_router(auth_router)
     app.include_router(audit_router)
+    app.include_router(cases_router)
 
     @app.get("/health")
     def health():

@@ -16,5 +16,5 @@ def init_db(engine: Engine) -> None:
 
 
 def get_session(request: Request) -> Iterator[Session]:
-    with Session(request.app.state.engine) as session:
+    with Session(request.app.state.engine, expire_on_commit=False) as session:
         yield session
