@@ -62,7 +62,7 @@ class FaceVersion(SQLModel, table=True):
     case_id: int = Field(foreign_key="case.id", index=True)
     parent_id: int | None = Field(default=None, foreign_key="faceversion.id")
     version_no: int
-    kind: str  # "generate" | "refine" | "revert"
+    kind: str  # "generate" | "refine" | "revert" | "adjust" (proportion sliders) | ...
     instruction: str
     attributes: dict = Field(default_factory=dict, sa_column=Column(JSON, nullable=False))
     prompt: str

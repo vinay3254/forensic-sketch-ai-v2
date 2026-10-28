@@ -221,6 +221,7 @@ export const AUDIT_ACTIONS = [
   'generate',
   'refine',
   'revert',
+  'proportion_adjust',
   'export',
   'make_photo',
   'variant_create',
@@ -280,3 +281,15 @@ export interface InterviewDraft {
   free_recall_source: InputSource | null
   answers: Omit<Answer, 'prompt'>[]
 }
+
+// proportion sliders (backend/face/proportions.py): each runs -1..1, 0 = as drawn
+export const PROPORTION_SLIDERS = [
+  ['eye_size', 'Eye size', 'Smaller', 'Bigger'],
+  ['eye_spacing', 'Eye spacing', 'Closer', 'Wider'],
+  ['nose_length', 'Nose length', 'Shorter', 'Longer'],
+  ['nose_width', 'Nose width', 'Narrower', 'Wider'],
+  ['mouth_width', 'Mouth width', 'Narrower', 'Wider'],
+  ['face_length', 'Face length', 'Shorter', 'Longer'],
+  ['jaw_width', 'Jaw width', 'Narrower', 'Wider'],
+] as const
+export type Proportions = Partial<Record<(typeof PROPORTION_SLIDERS)[number][0], number>>

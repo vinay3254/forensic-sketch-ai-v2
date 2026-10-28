@@ -11,6 +11,7 @@ import type {
   Health,
   Interview,
   InterviewDraft,
+  Proportions,
   QuestionBank,
   StyleCategory,
   FigureParams,
@@ -73,6 +74,25 @@ export const revert = (caseId: number, versionId: number) =>
 
 export const makePhoto = (caseId: number, versionId: number) =>
   post<Version>(`/api/cases/${caseId}/versions/${versionId}/photo`)
+
+// a reshaped copy of the sketch as an object URL (caller revokes it); nothing is stored
+export async function proportionPreview(caseId: number, versionId: number, adj: Proportions, signal?: AbortSignal) {
+  const res = await fetch(`/api/cases/${caseId}/versions/${versionId}/proportions/preview`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(adj),
+    signal,
+  })
+  if (!res.ok) {
+    const err = (await res.json().catch(() => null))?.error
+    throw new ApiError(err?.code ?? 'UNKNOWN', err?.message ?? `Request failed (${res.status}).`, res.status)
+  }
+  return URL.createObjectURL(await res.blob())
+}
+
+export const adjustProportions = (caseId: number, versionId: number, adj: Proportions) =>
+  post<Version>(`/api/cases/${caseId}/versions/${versionId}/proportions`, adj)
 
 export const saveDetails = (caseId: number, details: CaseDetails) =>
   request<CaseDetails>(`/api/cases/${caseId}/details`, { method: 'PUT', body: JSON.stringify(details) })

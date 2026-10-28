@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
@@ -10,6 +10,7 @@ from backend.cases.routes import VersionOut
 from backend.db import get_session
 from backend.errors import AppError
 from backend.face import service
+from backend.face.proportions import Adjust
 from backend.models import Case, FaceVersion, User
 
 router = APIRouter(prefix="/api/cases/{case_id}", tags=["face"])
@@ -142,3 +143,34 @@ def photo(
     path = service.existing_image_file(request.app.state.settings, v.photo_path)
     record(session, request, "image_view", user, case_id=case.id, version_id=v.id, detail={"kind": "photo"})
     return FileResponse(path, media_type="image/png")
+
+
+@router.post("/versions/{version_id}/proportions/preview")
+def proportions_preview(
+    version_id: int,
+    body: Adjust,
+    request: Request,
+    case: Case = Depends(require_case_access),
+    session: Session = Depends(get_session),
+):
+    # a reshaped copy of an image the officer is already viewing (that view is audited); nothing is stored
+    v = version_of_case(session, case, version_id)
+    state = request.app.state
+    return Response(service.preview_proportions(state.face_parser, state.settings, v, body), media_type="image/png")
+
+
+@router.post("/versions/{version_id}/proportions", response_model=VersionOut)
+def proportions(
+    version_id: int,
+    body: Adjust,
+    request: Request,
+    case: Case = Depends(require_case_access),
+    user: User = Depends(current_user),
+    session: Session = Depends(get_session),
+):
+    source = version_of_case(session, case, version_id)
+    state = request.app.state
+    v = service.adjust_proportions(session, state.settings, state.face_parser, case, user, source, body)
+    record(session, request, "proportion_adjust", user, case_id=case.id, version_id=v.id,
+           detail={"from_version": source.version_no, **{k: x for k, x in body.model_dump().items() if x}})
+    return VersionOut.of(v)

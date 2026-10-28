@@ -12,6 +12,7 @@ from backend.ai.client import AIClient
 from backend.ai.prompts import apply_edits, build_edit_prompt, build_image_prompt, build_photo_prompt
 from backend.ai.schemas import Attributes
 from backend.config import Settings
+from backend.face.proportions import Adjust, Landmarks, landmarks, warp
 from backend.face.regions import Parser, localize
 from backend.errors import AppError
 from backend.interview.transcript import fields_with_status, render_description
@@ -227,3 +228,51 @@ def make_photo(session: Session, ai: AIClient, settings: Settings, version: Face
         raise
     session.refresh(version)
     return version
+
+
+_landmark_cache: dict[str, Landmarks] = {}  # by image path; stored images never change
+
+
+def sketch_landmarks(parser: Parser | None, settings: Settings, version: FaceVersion) -> tuple[bytes, Landmarks]:
+    if parser is None:
+        raise AppError("PROPORTIONS_OFF", "Proportion sliders need the face parser (scripts/fetch_face_parser.py).", 503)
+    data = existing_image_file(settings, version.image_path).read_bytes()
+    lm = _landmark_cache.get(version.image_path)
+    if lm is None:
+        lm = landmarks(parser.parse(Image.open(io.BytesIO(data)).convert("L")))
+        if lm is None:
+            raise AppError("FACE_NOT_FOUND", "Could not find the eyes, brows and nose in this sketch.", 422)
+        if len(_landmark_cache) > 64:
+            _landmark_cache.clear()
+        _landmark_cache[version.image_path] = lm
+    return data, lm
+
+
+def preview_proportions(parser: Parser | None, settings: Settings, version: FaceVersion, adj: Adjust) -> bytes:
+    data, lm = sketch_landmarks(parser, settings, version)
+    return warp(data, lm, adj, width=512)
+
+
+def adjust_proportions(
+    session: Session, settings: Settings, parser: Parser | None, case: Case, user: User, source: FaceVersion, adj: Adjust
+) -> FaceVersion:
+    """A new version: `source` reshaped by the sliders. Attributes and uncertain fields carry over."""
+    if adj.is_zero():
+        raise AppError("VALIDATION", "Move at least one slider.", 422)
+    data, lm = sketch_landmarks(parser, settings, source)
+    image = warp(data, lm, adj)
+    version_no, parent_id = _new_version_no(session, case.id)
+    what = adj.describe()
+    version = FaceVersion(
+        case_id=case.id,
+        parent_id=parent_id,
+        version_no=version_no,
+        kind="adjust",
+        instruction=f"Proportions: {what}",
+        attributes=dict(source.attributes),
+        uncertain=source.uncertain,
+        prompt=source.prompt,
+        image_path=save_image(settings, case.id, version_no, image),
+        created_by=user.id,
+    )
+    return _commit_version(session, settings, version, [("assistant", f"Adjusted v{source.version_no}: {what}.")])

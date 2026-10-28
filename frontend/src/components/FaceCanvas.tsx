@@ -7,6 +7,7 @@ interface Props {
   version: Version | undefined
   view: View
   busy: boolean
+  previewSrc?: string | null // proportion sliders being dragged
   onView: (view: View) => void
   onSelect: (id: number) => void
   onRevert: (id: number) => void
@@ -16,9 +17,9 @@ interface Props {
 const time = (iso: string) => new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 
 // the sketch on warm paper, with the version strip under it
-export default function FaceCanvas({ versions, version, view, busy, onView, onSelect, onRevert, onNew }: Props) {
+export default function FaceCanvas({ versions, version, view, busy, previewSrc, onView, onSelect, onRevert, onNew }: Props) {
   const showPhoto = view === 'photo' && !!version?.photo_url
-  const src = showPhoto ? version!.photo_url! : version?.image_url
+  const src = previewSrc ?? (showPhoto ? version!.photo_url! : version?.image_url)
   const latest = versions.at(-1)
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col gap-3">
@@ -41,7 +42,11 @@ export default function FaceCanvas({ versions, version, view, busy, onView, onSe
             <span className="text-[13px] text-muted">{version ? 'Pencil · front view' : 'No sketch yet'}</span>
           )}
         </div>
-        {version && <span className="text-xs text-muted">{version.kind === 'generate' ? 'Generated' : 'Updated'} {time(version.created_at)}</span>}
+        {previewSrc ? (
+          <span className="rounded-md bg-accent-soft px-2 py-0.5 text-xs text-accent">Preview, not saved</span>
+        ) : (
+          version && <span className="text-xs text-muted">{version.kind === 'generate' ? 'Generated' : 'Updated'} {time(version.created_at)}</span>
+        )}
       </div>
       <div className="relative flex min-h-0 flex-1 items-center justify-center [container-type:size]">
         {version ? (

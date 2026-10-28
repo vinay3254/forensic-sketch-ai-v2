@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import {
   ApiError,
+  adjustProportions,
   generate,
   getCase,
   listInterviews,
@@ -16,14 +17,16 @@ import DescriptionForm from '../components/DescriptionForm'
 import FaceCanvas, { type View } from '../components/FaceCanvas'
 import HeadPanel from '../components/HeadPanel'
 import PageHeader, { btnDark, btnLight } from '../components/PageHeader'
+import ProportionPanel from '../components/ProportionPanel'
 import RefineChat from '../components/RefineChat'
-import type { Version } from '../types'
+import type { Proportions, Version } from '../types'
 
 type Action =
   | { kind: 'generate'; text: string }
   | { kind: 'refine'; text: string }
   | { kind: 'revert'; versionId: number }
   | { kind: 'photo'; versionId: number }
+  | { kind: 'adjust'; versionId: number; adj: Proportions }
 
 const RETRYABLE = new Set(['AI_REFUSED', 'AI_UNAVAILABLE'])
 
@@ -66,6 +69,9 @@ export default function WorkspacePage() {
   const [selectedId, setSelectedId] = useState<number>()
   const [startingOver, setStartingOver] = useState(false)
   const [view, setView] = useState<View>('sketch')
+  const [panel, setPanel] = useState<'attributes' | 'proportions'>('attributes')
+  const [preview, setPreview] = useState<string | null>(null)
+  const onPreview = useCallback((url: string | null) => setPreview(url), [])
   const { data, isPending, error } = useQuery({
     queryKey: ['case', caseId],
     queryFn: () => getCase(caseId),
@@ -77,6 +83,7 @@ export default function WorkspacePage() {
       if (action.kind === 'refine')
         return (await refine(caseId, action.text)).version
       if (action.kind === 'photo') return makePhoto(caseId, action.versionId)
+      if (action.kind === 'adjust') return adjustProportions(caseId, action.versionId, action.adj)
       return revert(caseId, action.versionId)
     },
     onSuccess: (version, action) => {
@@ -160,6 +167,7 @@ export default function WorkspacePage() {
             version={selected}
             view={view}
             busy={busy}
+            previewSrc={panel === 'proportions' && view === 'sketch' ? preview : null}
             onView={setView}
             onSelect={(id) => {
               setSelectedId(id)
@@ -172,15 +180,43 @@ export default function WorkspacePage() {
           />
         </section>
         <section className="flex min-h-[28rem] flex-col overflow-hidden rounded-[22px] bg-white p-5 lg:min-h-0">
-          <AttributePanel
-            caseId={caseId}
-            version={selected}
-            busy={busy}
-            onMakePhoto={() =>
-              selected &&
-              mutation.mutate({ kind: 'photo', versionId: selected.id })
-            }
-          />
+          {selected && (
+            <div className="mb-3 flex shrink-0 rounded-full bg-field p-0.5 text-xs">
+              {(['attributes', 'proportions'] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => {
+                    setPanel(p)
+                    if (p === 'proportions') setView('sketch')
+                  }}
+                  className={`flex-1 rounded-full px-3 py-1.5 ${panel === p ? 'bg-ink text-white' : 'text-muted hover:text-ink'}`}
+                >
+                  {p === 'attributes' ? 'Attributes' : 'Proportions'}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="min-h-0 flex-1">
+          {selected && panel === 'proportions' ? (
+            <ProportionPanel
+              caseId={caseId}
+              version={selected}
+              busy={busy}
+              onPreview={onPreview}
+              onSave={(adj) => mutation.mutate({ kind: 'adjust', versionId: selected.id, adj })}
+            />
+          ) : (
+            <AttributePanel
+              caseId={caseId}
+              version={selected}
+              busy={busy}
+              onMakePhoto={() =>
+                selected &&
+                mutation.mutate({ kind: 'photo', versionId: selected.id })
+              }
+            />
+          )}
+          </div>
         </section>
       </div>
       {selected && <HeadSection caseId={caseId} version={selected} />}
