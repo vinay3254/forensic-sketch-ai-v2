@@ -90,3 +90,73 @@ def test_mock_gender_uses_whole_words():
 
 def test_mock_unclear_edit_needs_clarification():
     assert MockAIClient().parse_edit("hmm not quite", Attributes()).needs_clarification is True
+
+
+def _bad_request(msg):
+    import httpx as _h
+    import openai
+
+    req = _h.Request("POST", "http://llm/v1/chat/completions")
+    return openai.BadRequestError(msg, response=_h.Response(400, request=req), body=None)
+
+
+def test_json_mode_rejected_falls_back_to_plain_chat(settings):
+    calls = []
+
+    class Chat:
+        def create(self, **kw):
+            calls.append(kw)
+            if "response_format" in kw:
+                raise _bad_request("response_format is not supported")
+            return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content='{"gender": "male"}'))])
+
+    a = LiveAIClient(settings, fake_openai(Chat())).extract_attributes("man")
+    assert a.gender == "male" and len(calls) == 2
+
+
+def test_timeout_twice_maps_to_ai_unavailable(settings):
+    import httpx as _h
+    import openai
+
+    class Chat:
+        calls = 0
+
+        def create(self, **kw):
+            Chat.calls += 1
+            raise openai.APITimeoutError(request=_h.Request("POST", "http://llm"))
+
+    with pytest.raises(AppError) as e:
+        LiveAIClient(settings, fake_openai(Chat())).extract_attributes("man")
+    assert e.value.code == "AI_UNAVAILABLE" and Chat.calls == 2
+
+
+def test_safety_rejection_maps_to_ai_refused(settings):
+    def gen(**kw):
+        raise _bad_request("Your request was rejected by the safety system")
+
+    with pytest.raises(AppError) as e:
+        LiveAIClient(settings, fake_openai(images=SimpleNamespace(generate=gen))).generate_image("p")
+    assert e.value.code == "AI_REFUSED"
+
+
+def test_unreachable_image_url_maps_to_ai_unavailable(settings, monkeypatch):
+    import httpx as _h
+
+    images = SimpleNamespace(
+        generate=lambda **kw: SimpleNamespace(data=[SimpleNamespace(b64_json=None, url="http://img/x.png")])
+    )
+
+    def boom(url, timeout):
+        raise _h.ConnectTimeout("timed out")
+
+    monkeypatch.setattr("backend.ai.client.httpx.get", boom)
+    with pytest.raises(AppError) as e:
+        LiveAIClient(settings, fake_openai(images=images)).generate_image("p")
+    assert e.value.code == "AI_UNAVAILABLE"
+
+
+def test_empty_image_response_maps_to_ai_unavailable(settings):
+    images = SimpleNamespace(generate=lambda **kw: SimpleNamespace(data=[]))
+    with pytest.raises(AppError) as e:
+        LiveAIClient(settings, fake_openai(images=images)).generate_image("p")
+    assert e.value.code == "AI_UNAVAILABLE"

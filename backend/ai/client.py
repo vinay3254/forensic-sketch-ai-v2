@@ -1,4 +1,5 @@
 import base64
+import binascii
 import json
 import re
 from typing import Protocol, TypeVar
@@ -56,13 +57,17 @@ class LiveAIClient:
             base_url=settings.llm_base_url, api_key=settings.llm_api_key or "none", max_retries=0
         )
 
-    def _call(self, fn, **kw):
+    def _call(self, fn, *, raw_bad_request: bool = False, **kw):
         for attempt in range(2):
             try:
                 return fn(**kw)
             except _RETRYABLE as e:
                 if attempt == 1:
                     raise _map_openai_error(e)
+            except openai.BadRequestError as e:
+                if raw_bad_request:
+                    raise
+                raise _map_openai_error(e)
             except openai.OpenAIError as e:
                 raise _map_openai_error(e)
 
@@ -73,12 +78,19 @@ class LiveAIClient:
             timeout=CHAT_TIMEOUT,
         )
         try:
-            r = self._call(self.client.chat.completions.create, response_format={"type": "json_object"}, **kw)
-        except AppError:
-            raise
+            r = self._call(
+                self.client.chat.completions.create,
+                raw_bad_request=True,
+                response_format={"type": "json_object"},
+                **kw,
+            )
         except openai.BadRequestError:
+            # some providers reject JSON mode; the prompt already asks for JSON only
             r = self._call(self.client.chat.completions.create, **kw)
-        return r.choices[0].message.content or ""
+        try:
+            return r.choices[0].message.content or ""
+        except (IndexError, AttributeError, TypeError):
+            raise AppError("AI_UNAVAILABLE", "The AI service returned an empty reply. Try again.", 503)
 
     def _structured(self, system: str, user: str, model_cls: type[M]) -> M:
         prompt = user
@@ -98,12 +110,15 @@ class LiveAIClient:
         return self._structured(EDIT_SYSTEM_PROMPT, user, EditPlan)
 
     def _image_bytes(self, resp) -> bytes:
-        item = resp.data[0]
-        if getattr(item, "b64_json", None):
-            return base64.b64decode(item.b64_json)
-        r = httpx.get(item.url, timeout=URL_FETCH_TIMEOUT)
-        r.raise_for_status()
-        return r.content
+        try:
+            item = resp.data[0]
+            if getattr(item, "b64_json", None):
+                return base64.b64decode(item.b64_json)
+            r = httpx.get(item.url, timeout=URL_FETCH_TIMEOUT)
+            r.raise_for_status()
+            return r.content
+        except (httpx.HTTPError, binascii.Error, IndexError, AttributeError, TypeError):
+            raise AppError("AI_UNAVAILABLE", "The image service returned no usable image. Try again.", 503)
 
     def _image_kw(self, prompt: str) -> dict:
         return dict(

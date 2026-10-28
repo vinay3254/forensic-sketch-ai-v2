@@ -41,8 +41,12 @@ def generate(
     session: Session = Depends(get_session),
     ai: AIClient = Depends(get_ai_client),
 ):
-    v = service.generate_face(session, ai, request.app.state.settings, case, user, body.description)
-    record(session, request, "generate", user, case_id=case.id, version_id=v.id)
+    try:
+        v = service.generate_face(session, ai, request.app.state.settings, case, user, body.description)
+    except AppError as e:
+        record(session, request, "generate", user, case_id=case.id, detail={"outcome": e.code})
+        raise
+    record(session, request, "generate", user, case_id=case.id, version_id=v.id, detail={"outcome": "ok"})
     return VersionOut.of(v)
 
 
@@ -55,10 +59,15 @@ def refine(
     session: Session = Depends(get_session),
     ai: AIClient = Depends(get_ai_client),
 ):
-    v, reply = service.refine_face(session, ai, request.app.state.settings, case, user, body.message)
+    try:
+        v, reply = service.refine_face(session, ai, request.app.state.settings, case, user, body.message)
+    except AppError as e:
+        record(session, request, "refine", user, case_id=case.id, detail={"message": body.message, "outcome": e.code})
+        raise
+    outcome = "ok" if v else "needs_clarification"
     record(
         session, request, "refine", user, case_id=case.id, version_id=v.id if v else None,
-        detail={"message": body.message},
+        detail={"message": body.message, "outcome": outcome},
     )
     return {"version": VersionOut.of(v) if v else None, "reply": reply}
 

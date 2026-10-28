@@ -2,14 +2,18 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, Request
 from pydantic import BaseModel, Field
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
 
 from backend.audit.logger import record
 from backend.auth.deps import current_user, require_case_access
 from backend.db import get_session
+from backend.errors import AppError
 from backend.models import Case, ChatMessage, FaceVersion, User
 
 router = APIRouter(prefix="/api/cases", tags=["cases"])
+
+CASE_NUMBER_ATTEMPTS = 3
 
 
 class CaseIn(BaseModel):
@@ -68,9 +72,16 @@ def next_case_number(session: Session) -> str:
 def create_case(
     body: CaseIn, request: Request, user: User = Depends(current_user), session: Session = Depends(get_session)
 ):
-    case = Case(case_number=next_case_number(session), title=body.title, created_by=user.id)
-    session.add(case)
-    session.commit()
+    for _ in range(CASE_NUMBER_ATTEMPTS):
+        case = Case(case_number=next_case_number(session), title=body.title, created_by=user.id)
+        session.add(case)
+        try:
+            session.commit()
+            break
+        except IntegrityError:  # another request took this number first
+            session.rollback()
+    else:
+        raise AppError("CONFLICT", "Could not allocate a case number. Try again.", 409)
     session.refresh(case)
     record(session, request, "case_create", user, case_id=case.id)
     return CaseOut(**case.model_dump())

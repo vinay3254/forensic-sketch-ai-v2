@@ -89,3 +89,23 @@ def test_version_from_other_case_is_404(client, case_id):
     v = client.post(f"/api/cases/{case_id}/generate", json={"description": "male"}).json()
     other = client.post("/api/cases", json={"title": "u"}).json()["id"]
     assert client.get(f"/api/cases/{other}/versions/{v['id']}/image").status_code == 404
+
+
+def test_failed_generate_attempt_is_audited(client, case_id, app, login):
+    class Down:
+        def extract_attributes(self, t):
+            raise AppError("AI_UNAVAILABLE", "down", 503)
+
+    app.state.ai_client = Down()
+    client.post(f"/api/cases/{case_id}/generate", json={"description": "male"})
+    login(client, "admin", "adminpass")
+    rows = client.get(f"/api/audit?action=generate&case_id={case_id}").json()["items"]
+    assert len(rows) == 1 and rows[0]["version_id"] is None
+    assert rows[0]["detail"]["outcome"] == "AI_UNAVAILABLE"
+
+
+def test_conflicting_refine_attempt_is_audited(client, case_id, login):
+    client.post(f"/api/cases/{case_id}/refine", json={"message": "wider jaw"})
+    login(client, "admin", "adminpass")
+    rows = client.get(f"/api/audit?action=refine&case_id={case_id}").json()["items"]
+    assert rows[0]["detail"]["outcome"] == "CONFLICT"

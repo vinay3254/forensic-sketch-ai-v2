@@ -43,3 +43,41 @@ def test_missing_case_is_404(client, seed_users, login):
 def test_empty_title_is_422(client, seed_users, login):
     login(client, "officer1", "officer1pass")
     assert client.post("/api/cases", json={"title": ""}).status_code == 422
+
+
+def test_timestamps_are_serialised_as_utc(client, seed_users, login):
+    login(client, "officer1", "officer1pass")
+    c = client.post("/api/cases", json={"title": "t"}).json()
+    assert c["created_at"].endswith(("Z", "+00:00"))
+    listed = client.get("/api/cases").json()[0]["created_at"]
+    assert listed.endswith(("Z", "+00:00"))
+    login(client, "admin", "adminpass")
+    row = client.get("/api/audit").json()["items"][0]
+    assert row["ts"].endswith(("Z", "+00:00"))
+
+
+def test_audit_since_respects_timezone_offset(client, seed_users, login):
+    from datetime import datetime, timedelta, timezone
+
+    login(client, "admin", "adminpass")
+    ist = timezone(timedelta(hours=5, minutes=30))
+    since = (datetime.now(ist) - timedelta(minutes=5)).isoformat()
+    r = client.get("/api/audit", params={"since": since, "action": "login"}).json()
+    assert r["total"] == 1
+
+
+def test_case_number_clash_retries_instead_of_500(client, seed_users, login, monkeypatch):
+    login(client, "officer1", "officer1pass")
+    client.post("/api/cases", json={"title": "a"})
+    import backend.cases.routes as routes
+
+    real = routes.next_case_number
+    calls = []
+
+    def stale_then_real(session):
+        calls.append(1)
+        return "BLR-2026-0001" if len(calls) == 1 else real(session)
+
+    monkeypatch.setattr(routes, "next_case_number", stale_then_real)
+    r = client.post("/api/cases", json={"title": "b"})
+    assert r.status_code == 200 and r.json()["case_number"].endswith("-0002")

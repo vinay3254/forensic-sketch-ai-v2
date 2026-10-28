@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 
 from sqlalchemy import JSON, Column, DateTime, UniqueConstraint
+from sqlalchemy.types import TypeDecorator
 from sqlmodel import Field, SQLModel
 
 
@@ -8,8 +9,23 @@ def utcnow() -> datetime:
     return datetime.now(UTC)
 
 
+class UTCDateTime(TypeDecorator):
+    """Store naive UTC (SQLite has no timezone support); always hand back aware UTC."""
+
+    impl = DateTime
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is not None and value.tzinfo is not None:
+            value = value.astimezone(UTC).replace(tzinfo=None)
+        return value
+
+    def process_result_value(self, value, dialect):
+        return value.replace(tzinfo=UTC) if value is not None else None
+
+
 def ts_field() -> datetime:
-    return Field(default_factory=utcnow, sa_column=Column(DateTime(timezone=True), nullable=False))
+    return Field(default_factory=utcnow, sa_column=Column(UTCDateTime(), nullable=False))
 
 
 class User(SQLModel, table=True):
