@@ -49,7 +49,17 @@ Tests always use the mock AI client and need no network.
 
 ## Frontend
 
-The Vite dev server must proxy `/api` and `/health` to `http://localhost:8000`, so the session cookie stays same-origin. See plan Tasks 8–10.
+Requires Node 20+. Start the backend first, then:
+
+```bash
+cd frontend
+npm install
+npm run dev                   # http://localhost:5173
+```
+
+The Vite dev server proxies `/api` and `/health` to `http://localhost:8000`, so the session cookie stays same-origin. Open http://localhost:5173 and log in with a demo account.
+
+`npm run build` type-checks and builds to `frontend/dist`.
 
 ## Demo accounts
 
