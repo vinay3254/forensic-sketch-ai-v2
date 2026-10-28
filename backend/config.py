@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     # paste the old sketch back outside the edited regions; needs storage/models/face_parser.onnx
     # (scripts/fetch_face_parser.py), otherwise refines keep the raw edit
     edit_localize: bool = True
+    # 3D head worker (head3d/server.py), e.g. http://127.0.0.1:8010; empty turns the 3D head off
+    head3d_url: str = ""
     ai_mock: bool = False
 
 

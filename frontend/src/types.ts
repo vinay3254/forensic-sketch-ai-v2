@@ -179,6 +179,8 @@ export const AUDIT_ACTIONS = [
   'make_photo',
   'variant_create',
   'body_create',
+  'head_create',
+  'angle_view_create',
   'interview_start',
   'interview_assist',
   'interview_confirm',

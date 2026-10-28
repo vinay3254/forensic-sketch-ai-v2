@@ -1,0 +1,24 @@
+[project]
+name = "head3d"
+version = "0.1.0"
+description = "SketchLab 3D head worker: TripoSR on the GPU, photo PNG in, GLB out"
+requires-python = "==3.11.*"
+dependencies = [
+    "einops==0.7.0",
+    "fastapi>=0.115",
+    "httpx",
+    "huggingface-hub",
+    "numpy",
+    "omegaconf==2.3.0",
+    "pillow",
+    "rembg[cpu]",
+    "scikit-image",
+    "torch",
+    "torchvision",
+    "transformers==4.35.0",
+    "trimesh",
+    "uvicorn",
+]
+
+[tool.uv]
+package = false

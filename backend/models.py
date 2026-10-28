@@ -100,6 +100,17 @@ class BodyFigure(SQLModel, table=True):
     created_at: datetime = ts_field()
 
 
+class Head3D(SQLModel, table=True):
+    """Approximate 3D head (GLB) made from a version's realistic photo by the head3d worker."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    case_id: int = Field(foreign_key="case.id", index=True)
+    version_id: int = Field(foreign_key="faceversion.id")
+    mesh_path: str
+    created_by: int = Field(foreign_key="user.id")
+    created_at: datetime = ts_field()
+
+
 class ChatMessage(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
     case_id: int = Field(foreign_key="case.id", index=True)

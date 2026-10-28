@@ -17,6 +17,8 @@ from backend.db import init_db, make_engine
 from backend.export.routes import router as export_router
 from backend.face.regions import FaceParser
 from backend.face.routes import router as face_router
+from backend.head3d.client import HttpHead3DClient
+from backend.head3d.routes import router as head3d_router
 from backend.interview.routes import router as interview_router
 from backend.sheet.routes import router as sheet_router
 from backend.variants.routes import router as variants_router
@@ -45,6 +47,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.login_limiter = LoginLimiter()
     app.state.ai_client = MockAIClient() if settings.ai_mock else LiveAIClient(settings)
     app.state.face_parser = make_face_parser(settings)
+    app.state.head3d_client = HttpHead3DClient(settings.head3d_url) if settings.head3d_url else None
 
     app.add_middleware(
         CORSMiddleware,
@@ -64,6 +67,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(body_router)
     app.include_router(body_types_router)
     app.include_router(sheet_router)
+    app.include_router(head3d_router)
 
     @app.get("/health")
     def health():
@@ -73,6 +77,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             db = "ok"
         except Exception:
             db = "error"
-        return {"status": "ok", "db": db, "ai_mode": "mock" if settings.ai_mock else "live"}
+        return {
+            "status": "ok",
+            "db": db,
+            "ai_mode": "mock" if settings.ai_mock else "live",
+            "head3d": "on" if app.state.head3d_client else "off",
+        }
 
     return app
