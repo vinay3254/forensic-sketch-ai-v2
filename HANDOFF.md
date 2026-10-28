@@ -53,14 +53,9 @@ Sketches can be generated from a confirmed interview ("Confirm & generate sketch
 
 Done. Refines keep the change inside the edited regions and paste the previous sketch back elsewhere (`face/regions.py`, spec `docs/superpowers/specs/2026-10-28-localized-edits-design.md`). Needs `storage/models/face_parser.onnx` from `scripts/fetch_face_parser.py`; without it refines behave as before. Live check: a nose edit changed only the nose. Jaw, face shape, facial hair and marks have no parser class and still redraw the whole sketch. This fixes the known issue "edits change more than asked" for the mapped regions.
 
-## Sketch style trial (pick one, remove the other)
+## Sketch style
 
-Sketches looked too polished. The image prompt now asks for a rough, hand-drawn composite of an ordinary face (both options use it). On top of that, `SKETCH_FINISH` in `.env` picks the finish applied to every generated and refined sketch:
-
-- `clean` (default, option A): the image as the model drew it.
-- `scanned` (option B): `face/service.py:scanned_finish`, a photocopy curve (faint shading drops out, strokes darken), grey paper tone and grain.
-
-`AI_MOCK=0 uv run python -m scripts.compare_sketch_styles ["description"] [out_dir]` makes one live sketch and saves both finishes plus a side-by-side. Once the user decides, delete the losing option, its setting and the script.
+The image prompt asks for a rough, hand-drawn composite of an ordinary face (loose outlines, hatching, hair as shaded shapes, not idealised), and edits keep that line style. A photocopy-style post-process ("scanned" finish) was tried and dropped in favour of the plain model output.
 
 ## Ideas discussed, not built
 

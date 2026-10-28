@@ -18,7 +18,7 @@ After each refine, a face-parsing model (BiSeNet, 19 CelebAMask-HQ classes) find
   - `REGION_CLASSES`: edit region → BiSeNet classes. `nose`→10; `mouth`→11,12,13; `eyebrows`→2,3; `ears`→7,8,9; `hair`→17,18; `accessories`→6. `eyes` uses a box from the eyebrow bottom to the nose top, across the eyebrows, widened by 15%.
   - `localize(parser, before, after, regions) -> bytes | None`: union of region masks from both images, grown and feathered by 1/40 of the image size, then `before·(1−m) + after·m`. Returns `None` (raw edit used, as before) when a region has no mapping (`face_shape`, `jaw`, `facial_hair`, `marks`, `age_range`, `skin_tone`), when the region is not found, when the face moved (skin+nose+brows mask IoU between before and after < 0.85), or when parsing fails.
 - `app.state.face_parser`: built in `create_app` when `EDIT_LOCALIZE` is on, `AI_MOCK` is off and the model file exists; otherwise `None`. Tests inject a fake parser.
-- `face/service.refine_face`: after `normalize_image`, before `finish_sketch`, try `localize`. New nullable column `FaceVersion.localized` (bool) records whether it ran.
+- `face/service.refine_face`: after `normalize_image`, try `localize`. New nullable column `FaceVersion.localized` (bool) records whether it ran.
 - `scripts/fetch_face_parser.py`: downloads the BiSeNet weights (`79999_iter.pth`, SHA-256 checked) and the model code at a pinned commit of `zllrunning/face-parsing.PyTorch` into a temp dir, exports ONNX to `storage/models/face_parser.onnx`. Needs PyTorch only for this one-time step; the app never imports PyTorch.
 
 ## Errors

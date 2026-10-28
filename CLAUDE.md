@@ -17,7 +17,6 @@ uv run uvicorn backend.app:create_app --factory --reload --port 8000
 uv run pytest -q                               # all tests (always mock AI, no network)
 uv run pytest backend/tests/test_face.py::test_refine_creates_v2_with_merged_attributes
 uv run python -m scripts.smoke_live            # one live call per AI operation (needs AI_MOCK=0 + LLM_* in .env)
-uv run python -m scripts.compare_sketch_styles # one live sketch saved with both SKETCH_FINISH options (needs AI_MOCK=0)
 uv run --with torch --with torchvision --with onnx python -m scripts.fetch_face_parser  # one-time: face parser for localized edits
 ```
 
