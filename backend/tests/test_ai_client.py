@@ -40,8 +40,8 @@ class FakeChat:
         return SimpleNamespace(choices=[SimpleNamespace(message=SimpleNamespace(content=self.replies.pop(0)))])
 
 
-def fake_openai(chat=None, images=None):
-    return SimpleNamespace(chat=SimpleNamespace(completions=chat), images=images)
+def fake_openai(chat=None, images=None, responses=None):
+    return SimpleNamespace(chat=SimpleNamespace(completions=chat), images=images, responses=responses)
 
 
 def test_parse_edit_rejects_unknown_region_then_retries(settings):
@@ -159,4 +159,37 @@ def test_empty_image_response_maps_to_ai_unavailable(settings):
     images = SimpleNamespace(generate=lambda **kw: SimpleNamespace(data=[]))
     with pytest.raises(AppError) as e:
         LiveAIClient(settings, fake_openai(images=images)).generate_image("p")
+    assert e.value.code == "AI_UNAVAILABLE"
+
+
+def test_edit_via_responses_api_sends_image_and_reads_tool_result(settings):
+    settings = settings.model_copy(
+        update={"llm_image_edit_api": "responses", "llm_image_edit_model": "codex/gpt-5.6-luna"}
+    )
+    calls = []
+
+    def create(**kw):
+        calls.append(kw)
+        return SimpleNamespace(
+            output=[
+                SimpleNamespace(type="reasoning", result=None),
+                SimpleNamespace(type="image_generation_call", result=base64.b64encode(b"edited").decode()),
+            ]
+        )
+
+    client = LiveAIClient(settings, fake_openai(responses=SimpleNamespace(create=create)))
+    assert client.edit_image(b"face", "jaw: wider") == b"edited"
+    kw = calls[0]
+    assert kw["model"] == "codex/gpt-5.6-luna" and kw["tool_choice"] == {"type": "image_generation"}
+    content = kw["input"][0]["content"]
+    assert content[0] == {"type": "input_text", "text": "jaw: wider"}
+    assert content[1]["image_url"] == "data:image/png;base64," + base64.b64encode(b"face").decode()
+
+
+def test_edit_via_responses_api_without_image_is_ai_unavailable(settings):
+    settings = settings.model_copy(update={"llm_image_edit_api": "responses", "llm_image_edit_model": "m"})
+    create = lambda **kw: SimpleNamespace(output=[SimpleNamespace(type="message", result=None)])  # noqa: E731
+    client = LiveAIClient(settings, fake_openai(responses=SimpleNamespace(create=create)))
+    with pytest.raises(AppError) as e:
+        client.edit_image(b"face", "p")
     assert e.value.code == "AI_UNAVAILABLE"

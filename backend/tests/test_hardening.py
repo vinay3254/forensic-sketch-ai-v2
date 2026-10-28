@@ -207,3 +207,20 @@ def test_audit_view_records_all_filters(client, seed_users, login):
 def test_short_jwt_secret_is_rejected(tmp_path):
     with pytest.raises(ValidationError):
         Settings(jwt_secret="short", _env_file=None)
+
+
+# images from any provider are stored as PNG in the configured portrait shape
+
+
+def test_landscape_jpeg_is_stored_as_portrait_png(client, case_id, app, settings):
+    import io
+
+    from PIL import Image
+
+    buf = io.BytesIO()
+    Image.new("RGB", (1312, 1199), "gray").save(buf, "JPEG")
+    app.state.ai_client.generate_image = lambda prompt: buf.getvalue()
+    v = client.post(f"/api/cases/{case_id}/generate", json={"description": "male"}).json()
+    img = Image.open(io.BytesIO(client.get(v["image_url"]).content))
+    assert img.format == "PNG"
+    assert abs(img.width / img.height - 1024 / 1536) < 0.01

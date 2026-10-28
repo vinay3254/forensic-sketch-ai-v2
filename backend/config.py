@@ -1,5 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -20,6 +21,10 @@ class Settings(BaseSettings):
     llm_image_model: str = ""
     llm_image_size: str = "1024x1536"
     llm_image_quality: str = "medium"
+    # "images" = POST /images/edits; "responses" = /responses with the image_generation tool,
+    # for providers (e.g. Codex via OmniRoute) whose image models cannot take an input image
+    llm_image_edit_api: Literal["images", "responses"] = "images"
+    llm_image_edit_model: str = ""  # text model that calls the tool; used only with "responses"
     ai_mock: bool = False
 
 

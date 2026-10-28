@@ -134,8 +134,34 @@ class LiveAIClient:
         return self._image_bytes(self._call(self.client.images.generate, **self._image_kw(prompt)))
 
     def edit_image(self, image: bytes, prompt: str) -> bytes:
+        if self.s.llm_image_edit_api == "responses":
+            return self._edit_via_responses(image, prompt)
         resp = self._call(self.client.images.edit, image=("face.png", image, "image/png"), **self._image_kw(prompt))
         return self._image_bytes(resp)
+
+    def _edit_via_responses(self, image: bytes, prompt: str) -> bytes:
+        data_url = "data:image/png;base64," + base64.b64encode(image).decode()
+        resp = self._call(
+            self.client.responses.create,
+            model=self.s.llm_image_edit_model,
+            input=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "input_text", "text": prompt},
+                        {"type": "input_image", "image_url": data_url},
+                    ],
+                }
+            ],
+            tools=[{"type": "image_generation", "size": self.s.llm_image_size, "quality": self.s.llm_image_quality}],
+            tool_choice={"type": "image_generation"},
+            timeout=IMAGE_TIMEOUT,
+        )
+        try:
+            result = next(o.result for o in resp.output if o.type == "image_generation_call" and o.result)
+            return base64.b64decode(result)
+        except (StopIteration, binascii.Error, AttributeError, TypeError):
+            raise AppError("AI_UNAVAILABLE", "The image service returned no usable image. Try again.", 503)
 
 
 def get_ai_client(request: Request) -> AIClient:

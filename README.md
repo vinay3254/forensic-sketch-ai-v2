@@ -36,7 +36,7 @@ LLM_IMAGE_MODEL=<image model id>
 Then run the smoke test, which calls each AI operation once and prints timings:
 
 ```bash
-uv run python scripts/smoke_live.py
+uv run python -m scripts.smoke_live
 ```
 
 ### Tests

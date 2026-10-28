@@ -30,13 +30,29 @@ def existing_image_file(settings: Settings, rel_path: str) -> Path:
     return path
 
 
-def check_image(data: bytes) -> None:
-    """Reject bytes that are not a readable image before anything is stored."""
+def normalize_image(data: bytes, size: str) -> bytes:
+    """Return the AI image as PNG, centre-cropped to the configured aspect ratio.
+
+    Providers differ: some send JPEG, some ignore the requested size (Codex returns
+    landscape). Unreadable bytes are rejected before anything is stored."""
     try:
-        with Image.open(io.BytesIO(data)) as img:
-            img.verify()
+        with Image.open(io.BytesIO(data)) as src:
+            img = src.convert("RGB")
     except (UnidentifiedImageError, OSError, SyntaxError, ValueError):
         raise AppError("AI_UNAVAILABLE", "The image service returned an unreadable image. Try again.", 503)
+    w, h = (int(n) for n in size.lower().split("x"))
+    target = w / h
+    if img.width / img.height > target:  # too wide: trim the sides
+        new_w = round(img.height * target)
+        left = (img.width - new_w) // 2
+        img = img.crop((left, 0, left + new_w, img.height))
+    elif img.width / img.height < target:  # too tall: trim top and bottom
+        new_h = round(img.width / target)
+        top = (img.height - new_h) // 2
+        img = img.crop((0, top, img.width, top + new_h))
+    buf = io.BytesIO()
+    img.save(buf, "PNG")
+    return buf.getvalue()
 
 
 def save_image(settings: Settings, case_id: int, version_no: int, data: bytes) -> str:
@@ -89,8 +105,7 @@ def generate_face(
 ) -> FaceVersion:
     attrs = ai.extract_attributes(description)
     prompt = build_image_prompt(attrs)
-    image = ai.generate_image(prompt)
-    check_image(image)
+    image = normalize_image(ai.generate_image(prompt), settings.llm_image_size)
     version_no, parent_id = _new_version_no(session, case.id)
     version = FaceVersion(
         case_id=case.id,
@@ -122,7 +137,7 @@ def refine_face(
     attrs = apply_edits(Attributes(**current.attributes), plan.edits)
     prompt = build_edit_prompt(plan.edits)
     image = ai.edit_image(existing_image_file(settings, current.image_path).read_bytes(), prompt)
-    check_image(image)
+    image = normalize_image(image, settings.llm_image_size)
     version = FaceVersion(
         case_id=case.id,
         parent_id=current.id,
