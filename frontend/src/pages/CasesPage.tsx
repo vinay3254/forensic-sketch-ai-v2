@@ -6,6 +6,7 @@ import { useMe } from '../App'
 import { createCase, listCases, startInterview } from '../api'
 import { CASE_PAGES } from '../components/caseTabs'
 import Composer from '../components/Composer'
+import NewCaseDialog from '../components/NewCaseDialog'
 import Sparkle from '../components/Sparkle'
 import { lastPath } from '../lib/recent'
 import type { Case } from '../types'
@@ -92,11 +93,12 @@ export default function CasesPage() {
   const [text, setText] = useState('')
   const composer = useRef<HTMLDivElement>(null)
   const focus = () => composer.current?.querySelector('textarea')?.focus()
+  const [newOpen, setNewOpen] = useState(false)
   const [params, setParams] = useSearchParams()
   // "New case" from the jump-to palette lands here ready to type
   useEffect(() => {
     if (params.get('new')) {
-      focus()
+      setNewOpen(true)
       setParams({}, { replace: true })
     }
   }, [params, setParams])
@@ -171,7 +173,8 @@ export default function CasesPage() {
           />
         </div>
       </div>
-      <CaseHistory cases={cases ?? []} loading={isPending} onNew={focus} />
+      <CaseHistory cases={cases ?? []} loading={isPending} onNew={() => setNewOpen(true)} />
+      <NewCaseDialog open={newOpen} onClose={() => setNewOpen(false)} />
     </div>
   )
 }
