@@ -47,6 +47,15 @@ Sketches can be generated from a confirmed interview ("Confirm & generate sketch
 - No frontend unit tests; the frontend is checked with `npm run build` and in the browser.
 - A deleted tail of audit rows still verifies as intact; `/api/audit/verify` returns `head_hash` so an auditor can compare it with a noted value.
 
+## Sketch style trial (pick one, remove the other)
+
+Sketches looked too polished. The image prompt now asks for a rough, hand-drawn composite of an ordinary face (both options use it). On top of that, `SKETCH_FINISH` in `.env` picks the finish applied to every generated and refined sketch:
+
+- `clean` (default, option A): the image as the model drew it.
+- `scanned` (option B): `face/service.py:scanned_finish`, a photocopy curve (faint shading drops out, strokes darken), grey paper tone and grain.
+
+`AI_MOCK=0 uv run python -m scripts.compare_sketch_styles ["description"] [out_dir]` makes one live sketch and saves both finishes plus a side-by-side. Once the user decides, delete the losing option, its setting and the script.
+
 ## Ideas discussed, not built
 
 - Hugging Face image models as an alternative backend: FLUX.1-schnell (generate) + Qwen-Image-Edit-2511 (edit / photo). Needs an HF token and a second AI client.

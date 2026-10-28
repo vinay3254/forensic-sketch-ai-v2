@@ -24,7 +24,7 @@ EDIT_SYSTEM_PROMPT = (
 
 def build_image_prompt(a: Attributes) -> str:
     who = " ".join(x for x in [a.age_range, a.gender or "person"] if x)
-    parts = [f"Black and white graphite pencil sketch of a {who}, front-facing portrait"]
+    parts = [f"Quick hand-drawn composite pencil sketch of a {who}, front view"]
     features = [
         f"{a.skin_tone} skin" if a.skin_tone else None,
         f"{a.face_shape} face" if a.face_shape else None,
@@ -43,9 +43,11 @@ def build_image_prompt(a: Attributes) -> str:
     if features:
         parts[0] += " with " + ", ".join(features)
     parts.append(
-        "Drawn by a forensic artist in pencil on plain white paper: realistic proportions, fine pencil strokes, "
-        "soft graphite shading, black and white only, no colour. Neutral expression, looking straight ahead, "
-        "head and shoulders, plain white background."
+        "Drawn by hand by a forensic artist in about twenty minutes, in soft pencil on plain off-white paper: "
+        "loose dark outlines, rough hatching for shadows, hair drawn as simple shaded shapes rather than single "
+        "strands, no skin texture, not photorealistic, slight natural asymmetry. An ordinary, average-looking "
+        "face, not idealised and not a model. Black and white only, no colour. Neutral expression, looking "
+        "straight ahead, head and shoulders, plain shirt collar, plain background."
     )
     return ". ".join(parts)
 
@@ -54,7 +56,8 @@ def build_edit_prompt(edits: list[Edit]) -> str:
     changes = "; ".join(f"{e.region.replace('_', ' ')}: {e.change}" for e in edits)
     return (
         f"Edit this black and white pencil sketch. Change only the following: {changes}. "
-        "Keep the same person, identity, pose, expression, framing, pencil sketch style, white background "
+        "Keep the same person, identity, pose, expression, framing, rough hand-drawn pencil line style, "
+        "plain background "
         "and every other facial feature, including facial hair, exactly the same. Black and white only."
     )
 

@@ -3,7 +3,7 @@ import shutil
 import uuid
 from pathlib import Path
 
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, ImageChops, ImageFilter, UnidentifiedImageError
 
 from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select
@@ -55,6 +55,24 @@ def normalize_image(data: bytes, size: str, mode: str = "L") -> bytes:
     buf = io.BytesIO()
     img.save(buf, "PNG")
     return buf.getvalue()
+
+
+def scanned_finish(data: bytes) -> bytes:
+    """Make a clean grayscale sketch look photocopied from paper: faint shading drops out,
+    strokes get darker, white becomes a light grey paper tone, then soft grain is added."""
+    with Image.open(io.BytesIO(data)) as src:
+        img = src.convert("L")
+    # photocopy curve: anything lighter than 200 is paper, darker tones are stretched and darkened
+    img = img.point(lambda v: 225 if v >= 200 else 15 + int(210 * (v / 200) ** 1.8))
+    grain = Image.effect_noise(img.size, 14).filter(ImageFilter.GaussianBlur(0.6))
+    img = ImageChops.add(img, grain, scale=1, offset=-128)
+    buf = io.BytesIO()
+    img.save(buf, "PNG")
+    return buf.getvalue()
+
+
+def finish_sketch(settings: Settings, data: bytes) -> bytes:
+    return scanned_finish(data) if settings.sketch_finish == "scanned" else data
 
 
 def save_image(settings: Settings, case_id: int, version_no: int, data: bytes) -> str:
@@ -123,7 +141,7 @@ def generate_face(
     else:
         attrs = ai.extract_attributes(description)
     prompt = build_image_prompt(attrs)
-    image = normalize_image(ai.generate_image(prompt), settings.llm_image_size)
+    image = finish_sketch(settings, normalize_image(ai.generate_image(prompt), settings.llm_image_size))
     version_no, parent_id = _new_version_no(session, case.id)
     version = FaceVersion(
         case_id=case.id,
@@ -158,7 +176,7 @@ def refine_face(
     attrs = apply_edits(Attributes(**current.attributes), plan.edits)
     prompt = build_edit_prompt(plan.edits)
     image = ai.edit_image(existing_image_file(settings, current.image_path).read_bytes(), prompt)
-    image = normalize_image(image, settings.llm_image_size)
+    image = finish_sketch(settings, normalize_image(image, settings.llm_image_size))
     version = FaceVersion(
         case_id=case.id,
         parent_id=current.id,

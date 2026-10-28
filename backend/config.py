@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     # for providers (e.g. Codex via OmniRoute) whose image models cannot take an input image
     llm_image_edit_api: Literal["images", "responses"] = "images"
     llm_image_edit_model: str = ""  # text model that calls the tool; used only with "responses"
+    # "clean" = image as the model drew it; "scanned" = grey paper tone and grain so it reads as a scanned drawing
+    sketch_finish: Literal["clean", "scanned"] = "clean"
     ai_mock: bool = False
 
 
