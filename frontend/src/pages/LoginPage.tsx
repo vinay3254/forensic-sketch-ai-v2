@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Scale, ShieldCheck, UserRound } from 'lucide-react'
+import { ShieldCheck, UserRound } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { login, signup } from '../api'
@@ -46,7 +46,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-5 p-4">
       <form onSubmit={submit} className="w-full max-w-sm space-y-4 rounded-[24px] bg-white p-6 shadow-[0_30px_80px_-40px_rgba(38,36,31,0.45)]">
         <h1 className="flex flex-col items-center gap-1 pb-1">
           <TraceMark size="lg" />
@@ -121,21 +121,12 @@ export default function LoginPage() {
         <button type="submit" disabled={!ready || busy} className="w-full rounded-full bg-ink py-2.5 text-[13px] font-medium text-white hover:bg-ink-2 disabled:opacity-50">
           {busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : role === 'admin' ? 'Create admin account' : 'Create investigator account'}
         </button>
-
-        <aside aria-label="Use of AI output" className="flex gap-3 rounded-2xl border border-accent-soft bg-accent-soft/15 p-3.5">
-          <Scale size={18} className="mt-0.5 shrink-0 text-accent" aria-hidden />
-          <div className="space-y-1 text-[12px] leading-relaxed text-body">
-            <p className="font-semibold text-ink">An investigative aid, not proof of identity</p>
-            <p>
-              Sketches, 3D figures, translations and record matches in TRACE are generated with AI from witness accounts. They can be wrong
-              and must never be treated as evidence of who a person is.
-            </p>
-            <p>
-              Every output needs review by a trained officer and independent corroboration before any action is taken.
-            </p>
-          </div>
-        </aside>
       </form>
+      <p className="max-w-sm text-center text-[11px] leading-relaxed text-faint">
+        <span className="font-medium text-muted">Disclaimer.</span> TRACE is an investigative aid. Its sketches, 3D figures,
+        translations and record matches are produced with AI from witness accounts and are not proof of anyone's
+        identity. All output should be reviewed by a trained officer and corroborated by independent evidence.
+      </p>
     </div>
   )
 }
