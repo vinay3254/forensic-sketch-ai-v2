@@ -219,7 +219,7 @@ def user_cases(
 GROUPS = {
     "sketch": {"generate", "refine", "revert", "make_photo", "variant_create", "style_apply", "proportion_adjust",
                "translate", "body_create", "body_realistic", "body_reconstruct", "body_model_blender",
-               "figure_update", "figure_save", "head_create", "angle_view_create"},
+               "figure_update", "figure_save", "head_create", "angle_view_create", "body_kaggle"},
     "interview": {"interview_start", "interview_assist", "interview_confirm"},
     "casework": {"case_create", "case_update", "case_open", "case_list", "image_view", "export", "record_search",
                  "record_view"},

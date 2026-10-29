@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Download, ExternalLink } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import { bodyModelMesh, buildRealisticBody, getBlenderJob, getBody, getBodyModel, openBodyModel, reconstructBody, startBlenderJob } from '../api'
+import { bodyModelMesh, buildRealisticBody, kaggleJob, startKaggle3d, getBlenderJob, getBody, getBodyModel, openBodyModel, reconstructBody, startBlenderJob } from '../api'
 import FigureViewer from './FigureViewer'
 import PageHeader, { btnDark, btnLight } from './PageHeader'
 
@@ -12,12 +12,21 @@ const PHASES = {
   building: 'Blender is building geometry…', opening: 'Loading model into desktop Blender…',
   complete: 'Model saved', failed: 'Build failed',
 }
+const KAGGLE_STAGES: Record<string, string> = {
+  queued: 'Starting…',
+  views: 'Step 1 of 5 · Drawing the side and back views…',
+  upload: 'Step 2 of 5 · Sending the drawings to your private Kaggle dataset…',
+  kaggle: 'Step 3 of 5 · Kaggle GPU is building the 3D shape (usually 5–8 min)…',
+  download: 'Step 4 of 5 · Downloading the 3D shape…',
+  paint: 'Step 5 of 5 · Painting it with the drawings in Blender…',
+  saving: 'Saving the model…',
+}
 const DEFAULT_PROMPT = 'Model this person as editable 3D geometry. Include face, hair or beard, clothing, fingers, and shoes.'
 
 export default function ReconstructedFigure() {
   const caseId = Number(useParams().id)
   const queryClient = useQueryClient()
-  const [method, setMethod] = useState<'realistic' | 'blender' | 'image'>('realistic')
+  const [method, setMethod] = useState<'kaggle' | 'realistic' | 'blender' | 'image'>('kaggle')
   const [prompt, setPrompt] = useState('')
   const source = useQuery({ queryKey: ['body', caseId], queryFn: () => getBody(caseId) })
   const saved = useQuery({ queryKey: ['body-model', caseId], queryFn: () => getBodyModel(caseId) })
@@ -44,6 +53,21 @@ export default function ReconstructedFigure() {
       send.mutate(result.id)
     },
   })
+  // Kaggle 3D runs in the background; poll it while it runs and pick up the model when it is done
+  const kJob = useQuery({
+    queryKey: ['kaggle-job', caseId],
+    queryFn: () => kaggleJob(caseId),
+    refetchInterval: (q) => (q.state.data && (q.state.data.status === 'queued' || q.state.data.status === 'running') ? 3000 : false),
+  })
+  const kRunning = !!kJob.data && (kJob.data.status === 'queued' || kJob.data.status === 'running')
+  useEffect(() => {
+    if (kJob.data?.status === 'done') queryClient.invalidateQueries({ queryKey: ['body-model', caseId] })
+  }, [kJob.data?.id, kJob.data?.status, queryClient, caseId])
+  const kStart = useMutation({
+    mutationFn: (id: number) => startKaggle3d(caseId, id),
+    onSuccess: (job) => queryClient.setQueryData(['kaggle-job', caseId], job),
+  })
+  const kPhase = kRunning ? KAGGLE_STAGES[kJob.data!.stage ?? 'queued'] : null
   const realistic = useMutation({
     mutationFn: (id: number) => buildRealisticBody(caseId, id),
     onSuccess: (result) => queryClient.setQueryData(['body-model', caseId], result),
@@ -52,9 +76,9 @@ export default function ReconstructedFigure() {
     mutationFn: () => startBlenderJob(caseId, source.data!.id, prompt.trim() || DEFAULT_PROMPT),
     onSuccess: (result) => queryClient.setQueryData(['blender-job', caseId], result),
   })
-  const busy = running || start.isPending || build.isPending || realistic.isPending
-  const error = realistic.error ?? start.error ?? build.error ?? mesh.error ?? saved.error ?? source.error ?? job.error
-  const phase = running && job.data ? PHASES[job.data.status] : null
+  const busy = running || start.isPending || build.isPending || realistic.isPending || kRunning || kStart.isPending
+  const error = kStart.error ?? realistic.error ?? start.error ?? build.error ?? mesh.error ?? saved.error ?? source.error ?? job.error
+  const phase = kPhase ?? (running && job.data ? PHASES[job.data.status] : null)
   return (
     <>
       <PageHeader title="3D from image" actions={model && <>
@@ -83,6 +107,7 @@ export default function ReconstructedFigure() {
           {source.data ? <>
             <img src={source.data.image_url} alt="Full-body reference used for the next model" className="max-h-56 self-center rounded-xl object-contain" />
             <div className="flex flex-wrap gap-2" role="group" aria-label="Modeling method">
+              <button className={method === 'kaggle' ? btnDark : btnLight} aria-pressed={method === 'kaggle'} onClick={() => setMethod('kaggle')}>Kaggle 3D (best)</button>
               <button className={method === 'realistic' ? btnDark : btnLight} aria-pressed={method === 'realistic'} onClick={() => setMethod('realistic')}>Realistic body</button>
               <button className={method === 'blender' ? btnDark : btnLight} aria-pressed={method === 'blender'} onClick={() => setMethod('blender')}>Blender AI</button>
               <button className={method === 'image' ? btnDark : btnLight} aria-pressed={method === 'image'} onClick={() => setMethod('image')}>Image reconstruction</button>
@@ -93,9 +118,11 @@ export default function ReconstructedFigure() {
                 placeholder="E.g. model the face, give him a wider nose, add a hoodie with pockets…"
                 className="resize-y rounded-xl border border-line bg-field p-3 text-[13px]" />
             </label>}
-            <button className={btnDark} disabled={busy || saved.isPending || job.isPending} onClick={() => method === 'realistic' ? realistic.mutate(source.data!.id) : method === 'blender' ? start.mutate() : build.mutate(source.data!.id)}>
-              {busy ? phase || 'Building…' : method === 'realistic' ? 'Build realistic body' : method === 'blender' ? 'Build with Blender AI' : 'Rebuild from this image'}
+            <button className={btnDark} disabled={busy || saved.isPending || job.isPending} onClick={() => method === 'kaggle' ? kStart.mutate(source.data!.id) : method === 'realistic' ? realistic.mutate(source.data!.id) : method === 'blender' ? start.mutate() : build.mutate(source.data!.id)}>
+              {busy ? phase || 'Building…' : method === 'kaggle' ? 'Build on Kaggle GPU' : method === 'realistic' ? 'Build realistic body' : method === 'blender' ? 'Build with Blender AI' : 'Rebuild from this image'}
             </button>
+            {method === 'kaggle' && <p className="text-[12px] text-muted">The image model draws the person from the side and back; a free Kaggle GPU (your private notebook) turns the three drawings into a full 3D shape with Hunyuan3D-2; Blender paints it with the drawings. Takes about 6–10 minutes and keeps running if you leave this page. Only the drawings are sent, to your own private Kaggle dataset.</p>}
+            {kJob.data?.status === 'failed' && <p role="alert" className="rounded-xl bg-red-50 p-3 text-[13px] text-red-700">Kaggle 3D failed: {kJob.data.error}</p>}
             {method === 'realistic' && <p className="text-[12px] text-muted">A realistic human (MakeHuman) posed like the picture, stretched to its proportions and fitted to its outline. The image model draws the same person from the side and back, and every surface is textured from the view that faces it. Takes 1–2 minutes. Long dresses and tunics are fitted as body shape, not cloth.</p>}
             {method === 'blender' && <p className="text-[12px] text-muted">LLM writes Blender Python to model geometry. Builds can take a few minutes. Results may be stylized.</p>}
           </> : source.isPending ? <p>Loading reference…</p> : <Link to={`/cases/${caseId}/details`} className={btnLight}>Draw a full-body image in Details first</Link>}
@@ -104,7 +131,7 @@ export default function ReconstructedFigure() {
             <a href={model.source_url} target="_blank" rel="noreferrer" className="mt-1 inline-block underline underline-offset-4">View model’s original reference</a>
             {source.data && source.data.id !== model.body_id && <p className="mt-2">A newer full-body image is available. Rebuild to use it.</p>}
           </div>}
-          <p className="text-[12px] leading-relaxed text-muted">{model?.engine.startsWith('Realistic body') ? `${model.summary ? model.summary[0].toUpperCase() + model.summary.slice(1) + '. ' : ''}Side and back come from drawn views of the same person, so small details there are the image model's estimate; clothes follow the body's shape.` : model?.engine === 'LLM Blender modeling' ? 'This model uses generated geometry and materials. It has no projected reference texture. Facial likeness is approximate.' : 'Image reconstruction projects your reference onto front surfaces. Geometry and unseen surfaces are estimates; facial shape and side views may differ.'}</p>
+          <p className="text-[12px] leading-relaxed text-muted">{model?.engine.startsWith('Hunyuan3D') ? `${model.summary ? model.summary[0].toUpperCase() + model.summary.slice(1) + '. ' : ''}Shape from Hunyuan3D-2 on a Kaggle GPU; painted with the front, side and back drawings.` : model?.engine.startsWith('Realistic body') ? `${model.summary ? model.summary[0].toUpperCase() + model.summary.slice(1) + '. ' : ''}Side and back come from drawn views of the same person, so small details there are the image model's estimate; clothes follow the body's shape.` : model?.engine === 'LLM Blender modeling' ? 'This model uses generated geometry and materials. It has no projected reference texture. Facial likeness is approximate.' : 'Image reconstruction projects your reference onto front surfaces. Geometry and unseen surfaces are estimates; facial shape and side views may differ.'}</p>
           {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-[13px] text-red-700">{error.message}</p>}
           {job.data?.status === 'failed' && <p role="alert" className="rounded-xl bg-red-50 p-3 text-[13px] text-red-700">{job.data.error}</p>}
           <div aria-live="polite">

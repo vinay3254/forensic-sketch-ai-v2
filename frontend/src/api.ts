@@ -120,6 +120,20 @@ export const getBody = (caseId: number) =>
 export const drawBody = (caseId: number) => post<BodyFigure>(`/api/cases/${caseId}/body`)
 
 export const getBodyModel = (caseId: number) => request<BodyModel | null>(`/api/cases/${caseId}/figure/reconstruction`)
+export interface ModelJob {
+  id: number
+  status: 'queued' | 'running' | 'done' | 'failed'
+  stage: 'views' | 'upload' | 'kaggle' | 'download' | 'paint' | 'saving' | null
+  error: string | null
+  model_id: number | null
+  created_at: string
+  updated_at: string
+}
+// Hunyuan3D-2 on a Kaggle GPU, painted with the front/side/back drawings; runs in the background (~6–10 min)
+export const startKaggle3d = (caseId: number, bodyId: number) =>
+  post<ModelJob>(`/api/cases/${caseId}/figure/kaggle`, { body_id: bodyId })
+export const kaggleJob = (caseId: number) => request<ModelJob | null>(`/api/cases/${caseId}/figure/kaggle`)
+
 // MPFB2 human fitted to the full-body image, textured from front, side and back views (~45 s)
 export const buildRealisticBody = (caseId: number, bodyId: number) =>
   post<BodyModel>(`/api/cases/${caseId}/figure/realistic`, { body_id: bodyId })

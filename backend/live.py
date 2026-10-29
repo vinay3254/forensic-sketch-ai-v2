@@ -39,6 +39,7 @@ TASKS = [
     (r"/cases/\d+/translate$", "Translating the witness's words"),
     (r"/cases/\d+/body$", "Drawing the full body"),
     (r"/cases/\d+/figure/realistic$", "Building the 3D body"),
+    (r"/cases/\d+/figure/kaggle$", "Building 3D on the Kaggle GPU"),
     (r"/cases/\d+/figure/reconstruct$", "Reconstructing 3D from the image"),
     (r"/cases/\d+/figure/blender-jobs$", "Modelling in Blender"),
     (r"/cases/\d+/figure/prompt$", "Changing the 3D figure"),

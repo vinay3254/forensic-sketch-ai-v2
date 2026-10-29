@@ -222,3 +222,19 @@ class RecordCharge(SQLModel, table=True):
     section: str  # BNS section, e.g. "303(2)"
     offence: str
     status: str  # "under_investigation" | "charge_sheeted" | "convicted" | "acquitted"
+
+
+class ModelJob(SQLModel, table=True):
+    """A slow 3D build running in the background (backend/figure/kaggle3d.py); the page polls it."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    case_id: int = Field(foreign_key="case.id", index=True)
+    body_id: int = Field(foreign_key="bodyfigure.id")
+    engine: str
+    status: str = "queued"  # queued | running | done | failed
+    stage: str | None = None  # views | upload | kaggle | download | paint | saving
+    error: str | None = None
+    model_id: int | None = Field(default=None, foreign_key="bodymodel.id")
+    created_by: int = Field(foreign_key="user.id")
+    created_at: datetime = ts_field()
+    updated_at: datetime = ts_field()

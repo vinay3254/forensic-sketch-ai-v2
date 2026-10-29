@@ -253,6 +253,7 @@ export const AUDIT_ACTIONS = [
   'figure_update',
   'figure_save',
   'body_realistic',
+  'body_kaggle',
   'body_create',
   'head_create',
   'angle_view_create',

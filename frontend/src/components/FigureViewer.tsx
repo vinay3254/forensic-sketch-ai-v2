@@ -103,7 +103,17 @@ export default function FigureViewer({ glb, heightCm, preserveMaterials = false 
       setLoadError(null)
       gltf.scene.traverse((o) => {
         if (!(o instanceof THREE.Mesh)) return
-        if (preserveMaterials) return
+        if (preserveMaterials) {
+          // a model painted with the drawings already carries their pencil shading: show it close to as drawn
+          // (mostly self-lit) with a little scene light for shape, instead of a dull physically based material
+          const old = o.material as THREE.MeshStandardMaterial
+          if (old.map) {
+            old.map.colorSpace = THREE.SRGBColorSpace
+            o.material = new THREE.MeshLambertMaterial({ map: old.map, emissive: '#ffffff', emissiveMap: old.map, emissiveIntensity: 0.7, color: '#7a7a7a' })
+            old.dispose()
+          }
+          return
+        }
         const tone = (o.material as THREE.MeshStandardMaterial).color?.clone() ?? new THREE.Color(PAPER)
         o.material = new THREE.MeshLambertMaterial({ color: tone.lerp(new THREE.Color(PAPER), 0.25) })
         const lines = new THREE.LineSegments(new THREE.EdgesGeometry(o.geometry, 32), new THREE.LineBasicMaterial({ color: GRAPHITE }))
