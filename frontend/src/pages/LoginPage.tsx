@@ -123,9 +123,10 @@ export default function LoginPage() {
         </button>
       </form>
       <p className="max-w-sm text-center text-[12px] font-medium leading-relaxed text-muted">
-        <span className="font-semibold text-ink">Disclaimer.</span> TRACE is an investigative aid. Its sketches, 3D figures,
-        translations and record matches are produced with AI from witness accounts and are not proof of anyone's
-        identity. All output should be reviewed by a trained officer and corroborated by independent evidence.
+        <span className="font-semibold text-ink">Disclaimer:</span> TRACE is an investigative aid. Its sketches, 3D figures,
+        translations, and record matches are AI-generated or AI-assisted based on witness accounts and available data.
+        They do not establish a person's identity or guilt. All outputs must be reviewed by a trained officer and
+        corroborated with independent evidence.
       </p>
     </div>
   )

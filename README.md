@@ -13,9 +13,9 @@ forensic pencil sketch, refines it by chat and with sliders, turns it into a rea
 and a 3D model, checks it against a criminal-records database, and prints a one-page case sheet. Every action is
 written to a tamper-evident audit log, and admins watch their investigators' work live on a dashboard.
 
-> **Disclaimer.** TRACE is an investigative aid. Its sketches, 3D figures, translations and record matches are
-> produced with AI from witness accounts and are not proof of anyone's identity. All output should be reviewed by a
-> trained officer and corroborated by independent evidence.
+> **Disclaimer:** TRACE is an investigative aid. Its sketches, 3D figures, translations, and record matches are
+> AI-generated or AI-assisted based on witness accounts and available data. They do not establish a person's identity
+> or guilt. All outputs must be reviewed by a trained officer and corroborated with independent evidence.
 
 ## Screenshots
 
