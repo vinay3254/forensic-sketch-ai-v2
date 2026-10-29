@@ -42,21 +42,142 @@ written to a tamper-evident audit log, and admins watch their investigators' wor
 
 ## Architecture
 
+```mermaid
+flowchart LR
+    subgraph Browser["Browser · React 19 + TypeScript + Vite + Tailwind 4 + three.js"]
+        UI["Pages: Home · Sketch · Details · Interview · Styles · Figure · Case sheet · Records · Dashboard · Audit"]
+        SPEECH["Web Speech API<br/>(8 Indian languages)"]
+    end
+
+    subgraph Backend["Backend · FastAPI · SQLModel · Python 3.12"]
+        AUTH["Auth<br/>JWT cookie · bcrypt · rate limit<br/>case access on every route"]
+        CORE["Cases · Sketch · Refine · Proportions<br/>Interview · Translate · Styles · Variants<br/>Body · Case sheet · Export"]
+        REC["Records + Suspect matching"]
+        JOBS["3D jobs (background)"]
+        AUDIT["Audit log<br/>SHA-256 hash chain"]
+        LIVE["Live presence + work in progress<br/>Server-Sent Events"]
+    end
+
+    subgraph Local["Local CPU models"]
+        PARSER["BiSeNet face parser"]
+        ARC["ArcFace + BlazeFace"]
+        POSE["MediaPipe Pose"]
+    end
+
+    DB[("SQLite app.db<br/>cases · versions · records · audit")]
+    FILES[("storage/<br/>images · GLB · .blend · mugshots")]
+    GW["OpenAI-compatible gateway<br/>chat model + image models"]
+    KAGGLE["Kaggle T4 GPU<br/>Hunyuan3D-2 (private notebook)"]
+    BLENDER["Blender (bpy)<br/>paint 3D · .blend"]
+
+    UI -->|"REST + cookie"| AUTH --> CORE
+    UI -.->|"heartbeat · page"| LIVE
+    LIVE -.->|"live updates"| UI
+    SPEECH --> UI
+    CORE --> GW
+    CORE --> PARSER
+    REC --> ARC
+    JOBS --> POSE
+    JOBS --> KAGGLE
+    JOBS --> BLENDER
+    CORE & REC & JOBS --> AUDIT
+    AUDIT --> LIVE
+    CORE & REC & JOBS & AUDIT --> DB
+    CORE & JOBS --> FILES
 ```
-Browser · React 19 + TypeScript + Vite + Tailwind 4 + TanStack Query + three.js
-   │  session cookie · page header + 30 s heartbeat (presence) · live updates over Server-Sent Events
-   ▼
-Backend · Python 3.12 · FastAPI · SQLModel · SQLite
-   ├─ auth (JWT cookie, bcrypt, rate limit) → every case route checks case access
-   ├─ cases · face (sketch, refine, proportions) · interview · translate · records · matching
-   ├─ figure (3D jobs) · body · styles · variants · sheet · export
-   ├─ audit (SHA-256 hash chain) · oversight + dashboard · live (presence, work in progress)
-   ├─ AI client ──► any OpenAI-compatible gateway (OmniRoute in the demo) ──► chat + image models
-   ├─ CPU models (ONNX / MediaPipe): face parser, face matcher, pose detector
-   └─ background jobs ──► Kaggle API (private dataset + private GPU notebook)
-                        └► Blender (bpy) subprocess: paint the 3D model, build bodies, write .blend files
-Blender worker · FastAPI + bpy (port 8020): mannequin editor with live GLB rebuilds
-Storage · storage/ (images, models, GLB/.blend, demo mugshots) · app.db (data + audit chain)
+
+## Workflows
+
+### The whole flow, one case
+
+```mermaid
+flowchart TD
+    A([Officer signs in]) --> B{Admin?}
+    B -- yes --> D[Live dashboard: who is active, sessions, cases, work in progress]
+    B -- no --> C[Cases]
+    C --> E[New case]
+    E --> F{How is the face described?}
+    F -- typed or spoken --> G[Description]
+    F -- witness interview --> H["Neutral questions, answers verbatim + English translation,<br/>locked with SHA-256 when the witness confirms"]
+    G & H --> I[Pencil sketch]
+    I --> J["Refine by chat · proportion sliders · styles · disguises"]
+    J --> K[Realistic photo]
+    K --> L["Matches: compare with the records' mugshots → top 5 leads"]
+    J --> M[Details + full-body drawing]
+    M --> N[3D model on a Kaggle GPU]
+    J & M & N --> O[Case sheet PDF / PNG · exports]
+    I & J & K & L & N & O -.-> P[(Audit log)]
+    P -.-> D
+```
+
+### Sketch and refine: keeping every other feature the same
+
+```mermaid
+flowchart TD
+    W["Witness words"] --> X["Chat model → 16 fields (JSON, validated)<br/>Don't know → empty · unsure → marked"]
+    X --> Y["Image prompt names every field<br/>+ witness words, left/right rule, pencil style"]
+    Y --> V1[["Version 1: image + fields"]]
+    V1 --> R["Officer: 'make the moustache thicker'"]
+    R --> Q["Chat model: which region? (facial hair)<br/>too vague → ask a question"]
+    Q --> U["Update only that field; copy the rest"]
+    U --> E2["Image-edit model gets the CURRENT sketch:<br/>'change only facial hair, keep everything else'"]
+    E2 --> FP{"Face parser finds the region<br/>in old and new sketch?"}
+    FP -- yes --> PB["Inside the region: new pixels<br/>Outside: old sketch pasted back"]
+    FP -- "no / face moved" --> RAW["Keep the model's edit<br/>(marked not localized)"]
+    PB & RAW --> VN[["Version n+1 (append-only)"]]
+    V1 --> SL["Proportion sliders:<br/>warp pixels around landmarks, no AI"] --> VN
+```
+
+### 3D model
+
+```mermaid
+sequenceDiagram
+    actor O as Officer
+    participant T as TRACE backend
+    participant AI as Image model
+    participant K as Kaggle GPU (private)
+    participant B as Blender
+    O->>T: Build 3D model (full-body image)
+    T-->>O: Job started (steps shown live)
+    T->>AI: Same person, side view / back view
+    AI-->>T: Side + back drawings
+    T->>K: New dataset version (3 drawings) + run notebook
+    K->>K: Hunyuan3D-2 multi-view → 3D shape
+    K-->>T: shape.glb
+    T->>T: Pose landmarks + outlines of each drawing (MediaPipe)
+    T->>B: Scale to height, line each drawing up every 1 cm,<br/>face from the front drawing, paint, save
+    B-->>T: figure.glb + figure.blend
+    T-->>O: Model in the 3D viewer · Download GLB / .blend
+```
+
+### Suspect matching
+
+```mermaid
+flowchart LR
+    S["Sketch version<br/>(its realistic photo if made)"] --> D1["BlazeFace: face + eyes, nose, mouth"]
+    D1 --> AL["Align to 112×112<br/>(similarity transform)"]
+    AL --> EM["ArcFace → 512-number fingerprint"]
+    DBF[("120 records' mugshot<br/>fingerprints (stored once)")] --> CMP
+    EM --> CMP["Cosine similarity with every mugshot"]
+    CMP --> TOP["Top 5 leads"]
+    TOP --> BAND{"Score"}
+    BAND -- "≥ 0.50" --> ST[Strong lead]
+    BAND -- "0.35–0.50" --> PO[Possible lead]
+    BAND -- "< 0.35" --> WE[Weak]
+    TOP -.-> AU[(Audit: suspect_match with scores)]
+```
+
+### Audit log and live dashboard
+
+```mermaid
+flowchart LR
+    ACT["Any action<br/>(sketch, view, search, login…)"] --> ROW["New audit row"]
+    PREV["Previous row's hash"] --> H["SHA-256 over previous hash + all fields"]
+    ROW --> H --> CHAIN[(Hash chain)]
+    CHAIN --> VER["Verify integrity:<br/>recompute every link"]
+    TAB["Open TRACE tabs<br/>page header + 30 s heartbeat"] --> PRES["Presence: active / idle / signed out"]
+    LONG["Long requests running"] --> WIP["Work in progress"]
+    ROW & PRES & WIP --> SSE["Change signal (Server-Sent Events)"] --> DASH["Admin dashboard refreshes instantly"]
 ```
 
 ## Models
