@@ -1,11 +1,10 @@
-<h3 align="center">Team Samosachaat · T1-26</h3>
-
 <p align="center">
   <img src="assets/readme/splash.png" alt="TRACE splash screen" width="360">
 </p>
 
 <h1 align="center">TRACE</h1>
 <p align="center"><b>Forensic sketch workspace</b>: from a witness's words to a pencil composite, a 3D figure and leads from the records.</p>
+<h3 align="center">Built by Team Samosachaat (T1-26)</h3>
 <p align="center">HackFest 2026 · Track 1 (AI Nexus) · Problem T1-P</p>
 
 ---
@@ -293,6 +292,10 @@ Created by `uv run python -m backend.seed`. More accounts can be made on the log
 5. Open *Figure → Build 3D model* (about 10 minutes on Kaggle) and the *Case sheet*.
 6. Sign in as `admin`: the live dashboard shows officer1's sessions and work; open the audit log and click *Verify integrity*.
 7. Sign in as `officer2` and try to open officer1's case: access is denied and recorded.
+
+## Team
+
+**Team Samosachaat** · team T1-26 · HackFest 2026, Track 1 (AI Nexus).
 
 ## Licences and data
 
