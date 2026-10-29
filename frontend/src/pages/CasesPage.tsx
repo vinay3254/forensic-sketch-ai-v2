@@ -46,7 +46,7 @@ function CaseHistory({ cases, loading, onNew }: { cases: Case[]; loading: boolea
           className="min-w-0 flex-1 border-0 bg-transparent text-[13px] placeholder:text-faint"
         />
       </label>
-      <div className="-mx-1 flex min-h-0 flex-1 flex-col overflow-y-auto px-1">
+      <div className="-mx-1 flex min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden px-1">
         {shown.length === 0 && (
           <p className="py-6 text-center text-[13px] text-muted">{loading ? 'Loading cases…' : q ? 'No matching cases.' : 'No cases yet.'}</p>
         )}
@@ -63,7 +63,7 @@ function CaseHistory({ cases, loading, onNew }: { cases: Case[]; loading: boolea
                 <img src={c.latest_image_url} alt="" className="h-24 w-full rounded-[14px] bg-cream object-cover object-[50%_30%] transition group-hover:brightness-95" />
               )}
             </Link>
-            <div className="flex items-center gap-1">
+            <div className="flex flex-wrap items-center gap-1">
               {CASE_PAGES.map((pg) => (
                 <Link
                   key={pg.key}
