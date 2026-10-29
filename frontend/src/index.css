@@ -79,7 +79,7 @@ input:focus {
   from { box-shadow: 0 0 0 0 rgba(70, 120, 200, 0); }
   to { box-shadow: 0 0 22px 2px rgba(70, 120, 200, 0.28); }
 }
-.trace-bracket { opacity: 0; animation: trace-bracket 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-.trace-tile { opacity: 0; animation: trace-rise 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-.trace-blue { animation-name: trace-rise, trace-glow; animation-duration: 0.38s, 0.6s; }
-.trace-letter { opacity: 0; animation: trace-rise 0.38s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.trace-bracket { opacity: 0; animation: trace-bracket 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.trace-tile { opacity: 0; animation: trace-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+.trace-blue { animation-name: trace-rise, trace-glow; animation-duration: 0.7s, 1s; }
+.trace-letter { opacity: 0; animation: trace-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards; }

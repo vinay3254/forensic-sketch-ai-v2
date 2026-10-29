@@ -3,11 +3,11 @@ import { useEffect, useState } from 'react'
 // TRACE intro: brackets draw in, face fragments drop into a mosaic one by one (the blue eye
 // last), then the wordmark. Once per browser session; any click or key skips it.
 const SEEN = 'trace.splash.seen'
-const TILE_START = 0.15 // s
-const TILE_STEP = 0.09
-const TILE_TIME = 0.38
-const LETTER_STEP = 0.04
-const HOLD = 0.35 // the finished mark stays this long before fading
+const TILE_START = 0.3 // s
+const TILE_STEP = 0.2
+const TILE_TIME = 0.7
+const LETTER_STEP = 0.08
+const HOLD = 1.2 // the finished mark stays this long before fading
 
 // left/top/width/height inside a 300×460 frame, in drop-in order
 const TILES: { src: string; box: [number, number, number, number]; blue?: boolean }[] = [
@@ -54,7 +54,7 @@ export default function Splash() {
 
   useEffect(() => {
     if (phase !== 'leaving') return
-    const t = setTimeout(() => setPhase('off'), 350)
+    const t = setTimeout(() => setPhase('off'), 550)
     return () => clearTimeout(t)
   }, [phase])
 
@@ -64,7 +64,7 @@ export default function Splash() {
     <div
       role="presentation"
       onClick={() => setPhase('leaving')}
-      className={`fixed inset-0 z-[100] flex cursor-pointer flex-col items-center justify-center gap-[6vmin] bg-[#0d0d0c] transition-opacity duration-300 ease-out ${
+      className={`fixed inset-0 z-[100] flex cursor-pointer flex-col items-center justify-center gap-[6vmin] bg-[#0d0d0c] transition-opacity duration-500 ease-out ${
         phase === 'leaving' ? 'opacity-0' : 'opacity-100'
       }`}
     >
@@ -79,7 +79,7 @@ export default function Splash() {
           <span
             key={pos}
             className={`trace-bracket absolute size-[56px] border-[#ece6da] ${pos}`}
-            style={{ animationDelay: `${i * 0.03}s` }}
+            style={{ animationDelay: `${i * 0.06}s` }}
           />
         ))}
         {TILES.map((t, i) => (
