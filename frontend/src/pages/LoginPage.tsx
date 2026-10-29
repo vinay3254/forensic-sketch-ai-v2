@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { ShieldCheck, UserRound } from 'lucide-react'
+import { Scale, ShieldCheck, UserRound } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { login, signup } from '../api'
@@ -121,6 +121,20 @@ export default function LoginPage() {
         <button type="submit" disabled={!ready || busy} className="w-full rounded-full bg-ink py-2.5 text-[13px] font-medium text-white hover:bg-ink-2 disabled:opacity-50">
           {busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : role === 'admin' ? 'Create admin account' : 'Create investigator account'}
         </button>
+
+        <aside aria-label="Use of AI output" className="flex gap-3 rounded-2xl border border-accent-soft bg-accent-soft/15 p-3.5">
+          <Scale size={18} className="mt-0.5 shrink-0 text-accent" aria-hidden />
+          <div className="space-y-1 text-[12px] leading-relaxed text-body">
+            <p className="font-semibold text-ink">An investigative aid, not proof of identity</p>
+            <p>
+              Sketches, 3D figures, translations and record matches in TRACE are generated with AI from witness accounts. They can be wrong
+              and must never be treated as evidence of who a person is.
+            </p>
+            <p>
+              Every output needs review by a trained officer and independent corroboration before any action is taken.
+            </p>
+          </div>
+        </aside>
       </form>
     </div>
   )
