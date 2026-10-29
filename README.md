@@ -1,3 +1,5 @@
+<h3 align="center">Team Samosachaat · T1-26</h3>
+
 <p align="center">
   <img src="assets/readme/splash.png" alt="TRACE splash screen" width="360">
 </p>
