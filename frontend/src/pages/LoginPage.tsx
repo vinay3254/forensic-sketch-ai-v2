@@ -122,8 +122,8 @@ export default function LoginPage() {
           {busy ? 'Please wait…' : mode === 'signin' ? 'Sign in' : role === 'admin' ? 'Create admin account' : 'Create investigator account'}
         </button>
       </form>
-      <p className="max-w-sm text-center text-[11px] leading-relaxed text-faint">
-        <span className="font-medium text-muted">Disclaimer.</span> TRACE is an investigative aid. Its sketches, 3D figures,
+      <p className="max-w-sm text-center text-[12px] font-medium leading-relaxed text-muted">
+        <span className="font-semibold text-ink">Disclaimer.</span> TRACE is an investigative aid. Its sketches, 3D figures,
         translations and record matches are produced with AI from witness accounts and are not proof of anyone's
         identity. All output should be reviewed by a trained officer and corroborated by independent evidence.
       </p>
