@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/images/splash.png" alt="TRACE splash screen" width="360">
+  <img src="assets/readme/splash.png" alt="TRACE splash screen" width="360">
 </p>
 
 <h1 align="center">TRACE</h1>
@@ -21,8 +21,8 @@ written to a tamper-evident audit log, and admins watch their investigators' wor
 
 | | |
 |---|---|
-| ![Home](docs/images/home.png) **Home**: describe a face, interview a witness, or reopen a case. | ![Sketch workspace](docs/images/sketch-workspace.png) **Sketch**: refine by chat, version history, attributes, proportion sliders and suspect matches. |
-| ![Case sheet](docs/images/case-sheet.png) **Case sheet**: one-page composite with characteristics, incident details, build and disguise simulations. | ![3D model](docs/images/3d-model.png) **3D model**: the full-body drawing (left) turned into a 3D figure, seen from the front, side and back. |
+| ![Home](assets/readme/home.png) **Home**: describe a face, interview a witness, or reopen a case. | ![Sketch workspace](assets/readme/sketch-workspace.png) **Sketch**: refine by chat, version history, attributes, proportion sliders and suspect matches. |
+| ![Case sheet](assets/readme/case-sheet.png) **Case sheet**: one-page composite with characteristics, incident details, build and disguise simulations. | ![3D model](assets/readme/3d-model.png) **3D model**: the full-body drawing (left) turned into a 3D figure, seen from the front, side and back. |
 
 ## What it does
 
@@ -175,9 +175,3 @@ Created by `uv run python -m backend.seed`. More accounts can be made on the log
 - ArcFace (InsightFace) and BiSeNet (CelebAMask-HQ) weights: non-commercial research use only.
 - MPFB2: GPL-3.0 code, CC0 assets. Hunyuan3D-2: Tencent Hunyuan Community Licence.
 - None of these are committed to the repository; the scripts above download them.
-
-## More
-
-- Current status, environment notes and known issues: [`HANDOFF.md`](HANDOFF.md)
-- Architecture notes for contributors: [`CLAUDE.md`](CLAUDE.md)
-- Designs and plans: [`docs/superpowers/`](docs/superpowers/)

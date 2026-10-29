@@ -8,3 +8,8 @@ node_modules/
 dist/
 smoke_*.png
 .playwright-mcp/
+
+# keep the repo to code: notes, plans and specs stay local (README.md is the exception)
+docs/
+*.md
+!/README.md
