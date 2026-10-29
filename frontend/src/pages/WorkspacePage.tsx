@@ -17,6 +17,7 @@ import DescriptionForm from '../components/DescriptionForm'
 import FaceCanvas, { type View } from '../components/FaceCanvas'
 import HeadPanel from '../components/HeadPanel'
 import PageHeader, { btnDark, btnLight } from '../components/PageHeader'
+import MatchPanel from '../components/MatchPanel'
 import ProportionPanel from '../components/ProportionPanel'
 import RefineChat from '../components/RefineChat'
 import type { Proportions, Version } from '../types'
@@ -69,7 +70,7 @@ export default function WorkspacePage() {
   const [selectedId, setSelectedId] = useState<number>()
   const [startingOver, setStartingOver] = useState(false)
   const [view, setView] = useState<View>('sketch')
-  const [panel, setPanel] = useState<'attributes' | 'proportions'>('attributes')
+  const [panel, setPanel] = useState<'attributes' | 'proportions' | 'matches'>('attributes')
   const [preview, setPreview] = useState<string | null>(null)
   const onPreview = useCallback((url: string | null) => setPreview(url), [])
   const { data, isPending, error } = useQuery({
@@ -182,7 +183,7 @@ export default function WorkspacePage() {
         <section className="flex min-h-[28rem] flex-col overflow-hidden rounded-[22px] bg-white p-5 lg:min-h-0">
           {selected && (
             <div className="mb-3 flex shrink-0 rounded-full bg-field p-0.5 text-xs">
-              {(['attributes', 'proportions'] as const).map((p) => (
+              {(['attributes', 'proportions', 'matches'] as const).map((p) => (
                 <button
                   key={p}
                   onClick={() => {
@@ -191,13 +192,15 @@ export default function WorkspacePage() {
                   }}
                   className={`flex-1 rounded-full px-3 py-1.5 ${panel === p ? 'bg-ink text-white' : 'text-muted hover:text-ink'}`}
                 >
-                  {p === 'attributes' ? 'Attributes' : 'Proportions'}
+                  {p === 'attributes' ? 'Attributes' : p === 'proportions' ? 'Proportions' : 'Matches'}
                 </button>
               ))}
             </div>
           )}
           <div className="min-h-0 flex-1">
-          {selected && panel === 'proportions' ? (
+          {selected && panel === 'matches' ? (
+            <MatchPanel caseId={caseId} version={selected} busy={busy} onMakePhoto={() => mutation.mutate({ kind: 'photo', versionId: selected.id })} />
+          ) : selected && panel === 'proportions' ? (
             <ProportionPanel
               caseId={caseId}
               version={selected}

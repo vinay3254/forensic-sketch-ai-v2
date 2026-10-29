@@ -222,7 +222,7 @@ GROUPS = {
                "figure_update", "figure_save", "head_create", "angle_view_create", "body_kaggle"},
     "interview": {"interview_start", "interview_assist", "interview_confirm"},
     "casework": {"case_create", "case_update", "case_open", "case_list", "image_view", "export", "record_search",
-                 "record_view"},
+                 "record_view", "suspect_match"},
 }
 QUIET = {"oversight_view", "audit_view"}
 VIEW_EVERY = timedelta(minutes=10)  # admins looking at logs is not investigator activity

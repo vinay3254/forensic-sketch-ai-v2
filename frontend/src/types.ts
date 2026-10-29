@@ -262,6 +262,7 @@ export const AUDIT_ACTIONS = [
   'translate',
   'record_search',
   'record_view',
+  'suspect_match',
   'oversight_view',
   'supervisor_assign',
   'signup',
@@ -498,4 +499,17 @@ export interface LiveTask {
   case_number: string | null
   case_title: string | null
   started: string
+}
+
+export interface MatchResult extends RecordSummary {
+  score: number
+  band: 'strong' | 'possible' | 'weak'
+}
+
+export interface Matches {
+  query: 'photo' | 'sketch'
+  notice: string
+  thresholds: { strong: number; possible: number }
+  searched: number
+  results: MatchResult[]
 }

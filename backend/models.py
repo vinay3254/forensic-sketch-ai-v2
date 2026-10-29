@@ -211,6 +211,8 @@ class RecordPerson(SQLModel, table=True):
     photo_path: str  # relative to storage_dir: the ID-style front photo
     live_photo_path: str | None = None  # a second photo of the same synthetic person (for matching tests)
     source: str  # e.g. "FLUXSynID 00000bb0d1b9_f"
+    # ArcFace fingerprint of the mugshot for suspect matching (backend/matching); [] = no usable face
+    face_vector: list | None = Field(default=None, sa_column=Column(JSON, nullable=True))
 
 
 class RecordCharge(SQLModel, table=True):

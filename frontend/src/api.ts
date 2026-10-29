@@ -22,6 +22,7 @@ import type {
   UserSession,
   RecordDetail,
   RecordSearch,
+  Matches,
   StyleCategory,
   FigureParams,
   FigureState,
@@ -238,3 +239,5 @@ export const sessionTimeline = (userId: number, loginId: number) =>
 export const userCases = (userId: number) => request<UserCase[]>(`/api/admin/users/${userId}/cases`)
 export const dashboard = (days: number) => request<Dashboard>(`/api/admin/dashboard?days=${days}`)
 export const heartbeat = (page: string) => post<void>('/api/auth/heartbeat', { page })
+export const findMatches = (caseId: number, versionId: number) =>
+  post<Matches>(`/api/cases/${caseId}/versions/${versionId}/matches`)

@@ -30,6 +30,7 @@ from backend.head3d.routes import router as head3d_router
 from backend.interview.routes import router as interview_router
 from backend.translate import router as translate_router
 from backend.records.routes import router as records_router
+from backend.matching.routes import router as matching_router
 from backend.oversight.routes import router as oversight_router
 from backend.live import Changes, Presence, router as live_router, track
 from backend.sheet.routes import router as sheet_router
@@ -43,6 +44,16 @@ def make_face_parser(settings: Settings) -> FaceParser | None:
     if settings.ai_mock or not settings.edit_localize or not path.is_file():
         return None
     return FaceParser(path)
+
+
+def make_face_matcher(settings: Settings):
+    arcface = settings.storage_dir / "models" / "arcface_w600k_r50.onnx"
+    detector = settings.storage_dir / "models" / "blaze_face_short_range.tflite"
+    if settings.ai_mock or not (arcface.is_file() and detector.is_file()):
+        return None
+    from backend.matching.faces import ArcFaceEmbedder
+
+    return ArcFaceEmbedder(arcface, detector)
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -62,6 +73,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.changes = Changes()
     app.state.ai_client = MockAIClient() if settings.ai_mock else LiveAIClient(settings)
     app.state.face_parser = make_face_parser(settings)
+    app.state.face_matcher = make_face_matcher(settings)  # suspect matching (backend/matching)
     app.state.head3d_client = HttpHead3DClient(settings.head3d_url) if settings.head3d_url else None
     app.state.figure_worker = HttpFigureWorker(settings.figure_url) if settings.figure_url else None
     app.state.blender_builder = LiveBlenderBuilder(settings)
@@ -87,6 +99,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(interview_router)
     app.include_router(translate_router)
     app.include_router(records_router)
+    app.include_router(matching_router)
     app.include_router(oversight_router)
     app.include_router(live_router)
     app.include_router(variants_router)
