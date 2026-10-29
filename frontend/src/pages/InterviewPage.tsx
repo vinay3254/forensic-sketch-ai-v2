@@ -232,7 +232,7 @@ export default function InterviewPage() {
   const saveLabel = save.isPending ? 'Saving…' : save.isError ? 'Not saved: ' + save.error.message : save.isSuccess ? 'All changes saved' : ''
 
   return (
-    <div className="mx-auto max-w-6xl space-y-4">
+    <div className="mx-auto min-h-0 w-full max-w-6xl flex-1 space-y-4 overflow-y-auto pb-4">
       <div className="flex items-end gap-4">
         <div>
           <Link to={`/cases/${caseId}`} className="text-sm text-blue-700 hover:underline">
