@@ -13,3 +13,8 @@ smoke_*.png
 docs/
 *.md
 !/README.md
+
+# GitHub keeps only the app code (frontend/, backend/) and what is needed to install it; the rest stays local
+scripts/
+blender_worker/
+head3d/
