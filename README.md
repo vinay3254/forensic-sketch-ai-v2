@@ -131,6 +131,8 @@ LLM_IMAGE_EDIT_MODEL=codex/gpt-5.6-luna
 
 ### Optional features (one-time downloads into `storage/`)
 
+The helper scripts (`scripts/`) and the Blender worker (`blender_worker/`) are kept outside this repository; ask the maintainer for them.
+
 | Feature | Command |
 |---|---|
 | Localized edits and proportion sliders | `uv run --with torch --with torchvision --with onnx python -m scripts.fetch_face_parser` |
