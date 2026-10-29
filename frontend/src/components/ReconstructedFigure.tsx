@@ -98,7 +98,7 @@ export default function ReconstructedFigure() {
               <p className="max-w-sm text-[13px] text-muted">{busy ? 'Your reference and previous models stay saved while the new model builds.' : 'Choose Blender AI to generate modeled geometry from your reference and instructions.'}</p>
             </div>}
           {model && mesh.data && <span className="pointer-events-none absolute left-4 top-3 text-[12px] text-muted">Drag to rotate · Scroll to zoom</span>}
-          {busy && model && <p role="status" className="absolute inset-x-4 bottom-4 rounded-xl bg-white/90 p-3 text-[13px]">{phase || (realistic.isPending ? 'Drawing side and back views, then building the body… 1–2 minutes.' : 'Building new model…')} Previous model stays available.</p>}
+          {busy && model && <p role="status" className="absolute inset-x-4 top-10 rounded-xl bg-white/90 p-3 text-[13px]">{phase || (realistic.isPending ? 'Drawing side and back views, then building the body… 1–2 minutes.' : 'Building new model…')} Previous model stays available.</p>}
         </section>
         <section className="flex flex-col gap-4 overflow-y-auto rounded-[22px] bg-white p-5">
           <div>
