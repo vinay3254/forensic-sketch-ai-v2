@@ -47,7 +47,8 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, {
     ...init,
     credentials: 'include',
-    headers: init?.body ? { 'Content-Type': 'application/json', ...init.headers } : init?.headers,
+    // the page this came from, so the admin dashboard can show where each person is working
+    headers: { 'X-Trace-Page': location.pathname, ...(init?.body ? { 'Content-Type': 'application/json' } : {}), ...init?.headers },
   })
   if (!res.ok) {
     const body = await res.json().catch(() => null)
@@ -222,3 +223,4 @@ export const sessionTimeline = (userId: number, loginId: number) =>
   request<Omit<AuditRow, 'prev_hash' | 'hash'>[]>(`/api/admin/users/${userId}/sessions/${loginId}`)
 export const userCases = (userId: number) => request<UserCase[]>(`/api/admin/users/${userId}/cases`)
 export const dashboard = (days: number) => request<Dashboard>(`/api/admin/dashboard?days=${days}`)
+export const heartbeat = (page: string) => post<void>('/api/auth/heartbeat', { page })

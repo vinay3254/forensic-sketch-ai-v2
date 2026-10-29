@@ -80,6 +80,11 @@ def record(
         session.add(row)
         session.commit()
         session.refresh(row)
+    changes = getattr(request.app.state, "changes", None)
+    # the live dashboard refreshes on every new row, except admins looking at logs: those rows would
+    # make every open dashboard refresh, log another view, and so on for ever
+    if changes is not None and action not in ("oversight_view", "audit_view"):
+        changes.bump()
     return row
 
 

@@ -39,7 +39,7 @@ export default function AuditPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-4">
+    <div className="mx-auto min-h-0 w-full max-w-7xl flex-1 space-y-4 overflow-y-auto pb-4">
       <div className="flex items-center gap-4">
         <h1 className="text-2xl font-semibold">Audit log</h1>
         <div className="ml-auto flex items-center gap-3">

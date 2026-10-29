@@ -203,6 +203,22 @@ export function Sparkline({ values, width = 96, height = 26 }: { values: number[
   )
 }
 
+// how a session ended (or that it is still open): one colour each, shared with the legend
+export const SESSION_COLOR: Record<string, string> = {
+  active: '#1baf7a',
+  idle: '#8fd6b8',
+  logout: '#2a78d6',
+  new_login: '#958f83',
+  expired: '#958f83',
+}
+export const SESSION_LABEL: Record<string, string> = {
+  active: 'Active now',
+  idle: 'Signed in, idle',
+  logout: 'Signed out',
+  new_login: 'Left without signing out',
+  expired: 'Left without signing out',
+}
+
 export type TimelineSession = {
   user_id: number
   username: string
@@ -253,14 +269,14 @@ export function SessionTimeline({ sessions, people, from, onPick }: {
               <text x={8} y={cy + 4} fontSize="12" fill="#26241f" className="cursor-pointer" onClick={() => onPick?.(p.user_id)}>
                 {p.username.length > 13 ? p.username.slice(0, 12) + '…' : p.username}
               </text>
-              {p.online && <circle cx={pad.l - 10} cy={cy} r={4} fill="#1baf7a" />}
+              {p.online && <circle cx={pad.l - 10} cy={cy} r={4} fill={SESSION_COLOR.active} />}
               <line x1={pad.l} x2={w - pad.r} y1={cy} y2={cy} stroke={GRID} strokeDasharray="2 4" />
               {sessions
                 .filter((s) => s.user_id === p.user_id)
                 .map((s) => {
                   const a = Math.max(x(new Date(s.start).getTime()), pad.l)
                   const b = Math.max(x(s.end ? new Date(s.end).getTime() : now), a + 5)
-                  const color = s.end_reason === 'active' ? '#1baf7a' : s.end_reason === 'logout' ? '#2a78d6' : '#958f83'
+                  const color = SESSION_COLOR[s.end_reason] ?? '#958f83'
                   return (
                     <rect
                       key={s.start}
@@ -291,7 +307,7 @@ export function SessionTimeline({ sessions, people, from, onPick }: {
           <p className="mt-1 text-body">
             {hover.s.actions} actions · {hover.s.cases} cases
           </p>
-          <p className="text-muted">{{ logout: 'Logged out', new_login: 'Logged in again without logging out', expired: 'Expired', active: 'Logged in now' }[hover.s.end_reason]}</p>
+          <p className="text-muted">{SESSION_LABEL[hover.s.end_reason]}</p>
         </Tip>
       )}
     </div>

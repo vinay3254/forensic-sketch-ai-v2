@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { FolderSearch, Home, LayoutDashboard, LogOut, PenLine, Search, ShieldCheck, UsersRound } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useMatch, useNavigate } from 'react-router-dom'
-import { listCases, logout, me } from './api'
+import { heartbeat, listCases, logout, me } from './api'
 import CaseBar from './components/CaseBar'
 import { CASE_PAGES } from './components/caseTabs'
 import CommandPalette, { openPalette } from './components/CommandPalette'
@@ -91,6 +91,20 @@ function Shell({ user, children }: { user: User; children: ReactNode }) {
       navigate('/login')
     },
   })
+
+  // presence for the admin dashboard: say which page is open now, and every 30 s while the tab is visible
+  useEffect(() => {
+    const beat = () => {
+      if (document.visibilityState === 'visible') void heartbeat(location.pathname).catch(() => {})
+    }
+    beat()
+    const t = setInterval(beat, 30_000)
+    document.addEventListener('visibilitychange', beat)
+    return () => {
+      clearInterval(t)
+      document.removeEventListener('visibilitychange', beat)
+    }
+  }, [pathname])
 
   // remember where each case was left, and switch its pages with Alt+1…4
   useEffect(() => {

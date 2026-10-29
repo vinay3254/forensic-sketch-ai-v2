@@ -30,6 +30,7 @@ from backend.interview.routes import router as interview_router
 from backend.translate import router as translate_router
 from backend.records.routes import router as records_router
 from backend.oversight.routes import router as oversight_router
+from backend.live import Changes, Presence, router as live_router, track
 from backend.sheet.routes import router as sheet_router
 from backend.styles.routes import router as styles_router
 from backend.variants.routes import router as variants_router
@@ -56,6 +57,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
     app.state.engine = make_engine(settings.database_url)
     app.state.login_limiter = LoginLimiter()
+    app.state.presence = Presence()  # who is active right now, and work in progress (backend/live.py)
+    app.state.changes = Changes()
     app.state.ai_client = MockAIClient() if settings.ai_mock else LiveAIClient(settings)
     app.state.face_parser = make_face_parser(settings)
     app.state.head3d_client = HttpHead3DClient(settings.head3d_url) if settings.head3d_url else None
@@ -72,6 +75,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.middleware("http")(track)
     register_error_handlers(app)
     app.include_router(auth_router)
     app.include_router(audit_router)
@@ -82,6 +86,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(translate_router)
     app.include_router(records_router)
     app.include_router(oversight_router)
+    app.include_router(live_router)
     app.include_router(variants_router)
     app.include_router(body_router)
     app.include_router(body_types_router)

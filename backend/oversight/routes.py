@@ -16,6 +16,7 @@ from backend.audit.logger import record
 from backend.auth.deps import require_role
 from backend.db import get_session
 from backend.errors import AppError
+from backend.live import ACTIVE_S, case_of, page_label
 from backend.models import AuditLog, Case, User
 
 router = APIRouter(prefix="/api/admin", tags=["oversight"])
@@ -223,7 +224,8 @@ GROUPS = {
     "casework": {"case_create", "case_update", "case_open", "case_list", "image_view", "export", "record_search",
                  "record_view"},
 }
-QUIET = {"oversight_view", "audit_view"}  # admins looking at logs is not investigator activity
+QUIET = {"oversight_view", "audit_view"}
+VIEW_EVERY = timedelta(minutes=10)  # admins looking at logs is not investigator activity
 
 
 def group_of(action: str) -> str:
@@ -260,10 +262,36 @@ def dashboard(
             daily[day_of(r.ts)]["failed"] += 1
     failed_by = Counter(r.username for r in failed_rows if r.username in visible_names)
 
+    presence = request.app.state.presence
+    now_ts = now.timestamp()
+    tasks = sorted(presence.tasks.values(), key=lambda t: t["started"])
+    task_cases = _case_refs(session, {t["case_id"] for t in tasks if t["case_id"]})
+    seen_pages = {uid: page for uid, (_, page) in presence.seen.items()}
+    page_cases = _case_refs(session, {c for c in map(case_of, seen_pages.values()) if c})
+
+    def task_out(t):
+        c = task_cases.get(t["case_id"])
+        return {"user_id": t["user_id"], "username": names.get(t["user_id"]), "label": t["label"],
+                "case_id": t["case_id"], "case_number": c.case_number if c else None,
+                "case_title": c.title if c else None, "started": datetime.fromtimestamp(t["started"], UTC)}
+
+    def page_out(path):
+        label, c = page_label(path), page_cases.get(case_of(path))
+        return f"{label} · {c.case_number}" if label and c else label
+
     people, timeline, recent, case_ids = [], [], [], set()
     for u in users:
         rows = by_user.get(u.id, [])
         sessions = sessions_of(rows, expiry)
+        # last active: the latest request (presence) or, after a restart, the latest logged action
+        seen = presence.seen.get(u.id)
+        last_active = datetime.fromtimestamp(seen[0], UTC) if seen else (_aware(rows[-1].ts) if rows else None)
+        if not sessions:
+            status = "never"
+        elif sessions[-1]["end_reason"] != "active":
+            status = "signed_out"
+        else:
+            status = "active" if last_active and now_ts - last_active.timestamp() <= ACTIVE_S else "idle"
         in_range = [r for r in rows if _aware(r.ts) >= since and r.action not in QUIET]
         per_day = Counter(day_of(r.ts) for r in in_range)
         for r in in_range:
@@ -275,27 +303,40 @@ def dashboard(
         recent += in_range
         mine = [s for s in sessions if (s["end"] is None or _aware(s["end"]) >= since)]
         for s in mine:
+            open_now = s["end_reason"] == "active"
             timeline.append({
                 "user_id": u.id, "username": u.username, "start": s["login"].ts,
-                "end": None if s["end_reason"] == "active" else s["end"], "end_reason": s["end_reason"],
+                # an open session runs to now while the person is active, to their last activity when idle
+                "end": None if open_now and status == "active" else (last_active if open_now else s["end"]),
+                "end_reason": (status if open_now else s["end_reason"]),
                 "actions": len(s["rows"]), "cases": len({r.case_id for r in s["rows"] if r.case_id}),
             })
         acts = Counter(r.action for r in in_range)
         people.append({
             "user_id": u.id, "username": u.username, "role": u.role, "supervisor": names.get(u.supervisor_id),
-            "online": bool(sessions) and sessions[-1]["end_reason"] == "active",
-            "last_seen": rows[-1].ts if rows else None, "sessions": len(mine), "cases": len(cases),
+            "status": status, "online": status == "active",
+            "last_seen": last_active,
+            "page": page_out(seen_pages.get(u.id)) if status in ("active", "idle") else None,
+            "doing": [task_out(t) for t in tasks if t["user_id"] == u.id], "sessions": len(mine), "cases": len(cases),
             "actions": len(in_range), "sketches": acts["generate"] + acts["refine"],
             "failed_logins": failed_by[u.username], "denied": acts["access_denied"],
             "daily_actions": [per_day[d] for d in day_keys],
         })
     refs = _case_refs(session, {r.case_id for r in recent if r.case_id})
     recent.sort(key=lambda r: r.id, reverse=True)
-    record(session, request, "oversight_view", admin, detail={"view": "dashboard", "days": days})
+    # the dashboard refreshes itself live; log the admin viewing it once per 10 minutes, not every refresh
+    last_view = session.exec(
+        select(AuditLog).where(AuditLog.user_id == admin.id, AuditLog.action == "oversight_view")
+        .order_by(AuditLog.id.desc())
+    ).first()
+    if not (last_view and last_view.detail.get("view") == "dashboard" and now - _aware(last_view.ts) < VIEW_EVERY):
+        record(session, request, "oversight_view", admin, detail={"view": "dashboard", "days": days})
     return {
         "days": days,
         "daily": list(daily.values()),
         "people": people,
+        "in_progress": [task_out(t) for t in tasks if t["user_id"] in {u.id for u in users}],
+        "now": now,
         "sessions": sorted(timeline, key=lambda s: s["start"]),
         "recent": [
             {"id": r.id, "ts": r.ts, "username": r.username, "action": r.action, "group": group_of(r.action),
@@ -306,7 +347,8 @@ def dashboard(
         "totals": {
             "investigators": sum(p["role"] != "admin" for p in people),
             "admins": sum(p["role"] == "admin" for p in people),
-            "online": sum(p["online"] for p in people),
+            "online": sum(p["status"] == "active" for p in people),
+            "idle": sum(p["status"] == "idle" for p in people),
             "sessions": len(timeline),
             "cases": len(case_ids),
             "sketches": sum(p["sketches"] for p in people),

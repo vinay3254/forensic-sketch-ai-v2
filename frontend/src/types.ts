@@ -469,6 +469,9 @@ export interface Dashboard {
     username: string
     role: string
     supervisor: string | null
+    status: 'active' | 'idle' | 'signed_out' | 'never'
+    page: string | null
+    doing: LiveTask[]
     online: boolean
     last_seen: string | null
     sessions: number
@@ -479,7 +482,19 @@ export interface Dashboard {
     denied: number
     daily_actions: number[]
   }[]
+  in_progress: LiveTask[]
+  now: string
   sessions: { user_id: number; username: string; start: string; end: string | null; end_reason: string; actions: number; cases: number }[]
   recent: { id: number; ts: string; username: string | null; action: string; group: WorkGroup; case_id: number | null; case_number: string | null; case_title: string | null }[]
-  totals: { investigators: number; admins: number; online: number; sessions: number; cases: number; sketches: number; failed_logins: number; denied: number }
+  totals: { investigators: number; admins: number; online: number; idle: number; sessions: number; cases: number; sketches: number; failed_logins: number; denied: number }
+}
+
+export interface LiveTask {
+  user_id: number
+  username: string | null
+  label: string
+  case_id: number | null
+  case_number: string | null
+  case_title: string | null
+  started: string
 }
