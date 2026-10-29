@@ -26,7 +26,8 @@ const DEFAULT_PROMPT = 'Model this person as editable 3D geometry. Include face,
 export default function ReconstructedFigure() {
   const caseId = Number(useParams().id)
   const queryClient = useQueryClient()
-  const [method, setMethod] = useState<'kaggle' | 'realistic' | 'blender' | 'image'>('kaggle')
+  // one way to build the 3D model: Kaggle 3D (the other engines stay in the backend, not offered here)
+  const [method] = useState<'kaggle' | 'realistic' | 'blender' | 'image'>('kaggle')
   const [prompt, setPrompt] = useState('')
   const source = useQuery({ queryKey: ['body', caseId], queryFn: () => getBody(caseId) })
   const saved = useQuery({ queryKey: ['body-model', caseId], queryFn: () => getBodyModel(caseId) })
@@ -106,12 +107,6 @@ export default function ReconstructedFigure() {
           </div>
           {source.data ? <>
             <img src={source.data.image_url} alt="Full-body reference used for the next model" className="max-h-56 self-center rounded-xl object-contain" />
-            <div className="flex flex-wrap gap-2" role="group" aria-label="Modeling method">
-              <button className={method === 'kaggle' ? btnDark : btnLight} aria-pressed={method === 'kaggle'} onClick={() => setMethod('kaggle')}>Kaggle 3D (best)</button>
-              <button className={method === 'realistic' ? btnDark : btnLight} aria-pressed={method === 'realistic'} onClick={() => setMethod('realistic')}>Realistic body</button>
-              <button className={method === 'blender' ? btnDark : btnLight} aria-pressed={method === 'blender'} onClick={() => setMethod('blender')}>Blender AI</button>
-              <button className={method === 'image' ? btnDark : btnLight} aria-pressed={method === 'image'} onClick={() => setMethod('image')}>Image reconstruction</button>
-            </div>
             {method === 'blender' && <label className="flex flex-col gap-2 text-[13px]">
               Describe your model
               <textarea rows={3} maxLength={2000} value={prompt} onChange={(event) => setPrompt(event.target.value)} disabled={busy}
@@ -119,9 +114,9 @@ export default function ReconstructedFigure() {
                 className="resize-y rounded-xl border border-line bg-field p-3 text-[13px]" />
             </label>}
             <button className={btnDark} disabled={busy || saved.isPending || job.isPending} onClick={() => method === 'kaggle' ? kStart.mutate(source.data!.id) : method === 'realistic' ? realistic.mutate(source.data!.id) : method === 'blender' ? start.mutate() : build.mutate(source.data!.id)}>
-              {busy ? phase || 'Building…' : method === 'kaggle' ? 'Build on Kaggle GPU' : method === 'realistic' ? 'Build realistic body' : method === 'blender' ? 'Build with Blender AI' : 'Rebuild from this image'}
+              {busy ? phase || 'Building…' : method === 'kaggle' ? (model ? 'Rebuild 3D model' : 'Build 3D model') : method === 'realistic' ? 'Build realistic body' : method === 'blender' ? 'Build with Blender AI' : 'Rebuild from this image'}
             </button>
-            {method === 'kaggle' && <p className="text-[12px] text-muted">The image model draws the person from the side and back; a free Kaggle GPU (your private notebook) turns the three drawings into a full 3D shape with Hunyuan3D-2; Blender paints it with the drawings. Takes about 6–10 minutes and keeps running if you leave this page. Only the drawings are sent, to your own private Kaggle dataset.</p>}
+            {method === 'kaggle' && <p className="text-[12px] text-muted">Builds a 3D model of this person from the full-body image (front, side and back drawings, shaped on a Kaggle GPU). Takes about 10 minutes and keeps going if you leave this page.</p>}
             {kJob.data?.status === 'failed' && <p role="alert" className="rounded-xl bg-red-50 p-3 text-[13px] text-red-700">Kaggle 3D failed: {kJob.data.error}</p>}
             {method === 'realistic' && <p className="text-[12px] text-muted">A realistic human (MakeHuman) posed like the picture, stretched to its proportions and fitted to its outline. The image model draws the same person from the side and back, and every surface is textured from the view that faces it. Takes 1–2 minutes. Long dresses and tunics are fitted as body shape, not cloth.</p>}
             {method === 'blender' && <p className="text-[12px] text-muted">LLM writes Blender Python to model geometry. Builds can take a few minutes. Results may be stylized.</p>}
@@ -133,10 +128,7 @@ export default function ReconstructedFigure() {
           </div>}
           <p className="text-[12px] leading-relaxed text-muted">{model?.engine.startsWith('Hunyuan3D') ? `${model.summary ? model.summary[0].toUpperCase() + model.summary.slice(1) + '. ' : ''}Shape from Hunyuan3D-2 on a Kaggle GPU; painted with the front, side and back drawings.` : model?.engine.startsWith('Realistic body') ? `${model.summary ? model.summary[0].toUpperCase() + model.summary.slice(1) + '. ' : ''}Side and back come from drawn views of the same person, so small details there are the image model's estimate; clothes follow the body's shape.` : model?.engine === 'LLM Blender modeling' ? 'This model uses generated geometry and materials. It has no projected reference texture. Facial likeness is approximate.' : 'Image reconstruction projects your reference onto front surfaces. Geometry and unseen surfaces are estimates; facial shape and side views may differ.'}</p>
           {error && <p role="alert" className="rounded-xl bg-red-50 p-3 text-[13px] text-red-700">{error.message}</p>}
-          {job.data?.status === 'failed' && <p role="alert" className="rounded-xl bg-red-50 p-3 text-[13px] text-red-700">{job.data.error}</p>}
           <div aria-live="polite">
-            {job.data?.status === 'complete' && job.data.desktop_opened && <p className="rounded-xl bg-tint p-3 text-[13px]">Blender AI model saved and opened in desktop Blender.</p>}
-            {job.data?.status === 'complete' && job.data.desktop_error && <p className="rounded-xl bg-tint p-3 text-[13px]">Model saved. {job.data.desktop_error}</p>}
             {send.isError && <p className="rounded-xl bg-red-50 p-3 text-[13px] text-red-700">Model stays saved. {send.error.message}</p>}
             {send.isSuccess && !send.isPending && <p className="rounded-xl bg-tint p-3 text-[13px]">Model loaded in connected Blender window.</p>}
           </div>
